@@ -4,123 +4,161 @@ const {
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
+const { ethers } = require("hardhat");
 
-describe("Lock", function () {
-  // We define a fixture to reuse the same setup in every test.
-  // We use loadFixture to run this setup once, snapshot that state,
-  // and reset Hardhat Network to that snapshot in every test.
-  async function deployOneYearLockFixture() {
-    const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
-    const ONE_GWEI = 1_000_000_000;
+describe("PublicSale Contract", function () {
+  let PublicSale, publicSale, owner, addr1, addr2;
+  let saleToken, baseToken;
+  const tokenPrice = ethers.parseUnits("1", 18); // Token price in wei
+  const maxSpend = ethers.parseUnits("10", 18); // Max spend per buyer in base token
+  const amount = ethers.parseUnits("1000", 18); // Amount of presale tokens
+  const hardCap = ethers.parseUnits("100", 18); // Hard cap in base token
+  const softCap = ethers.parseUnits("10", 18); // Soft cap in base token
+  const startBlock = 1;
+  const endBlock = 10;
+  const lockPeriod = 2 * 7 * 24 * 60 * 60; // 2 weeks in seconds
 
-    const lockedAmount = ONE_GWEI;
-    const unlockTime = (await time.latest()) + ONE_YEAR_IN_SECS;
+  beforeEach(async function () {
+    [owner, addr1, addr2] = await ethers.getSigners();
 
-    // Contracts are deployed using the first signer/account by default
-    const [owner, otherAccount] = await ethers.getSigners();
+    // Deploy ERC20 tokens
+    const ERC20 = await ethers.getContractFactory("ERC20Mock");
+    saleToken = await ERC20.deploy("SaleToken", "STK");
+    baseToken = await ERC20.deploy("BaseToken", "BTK");
 
-    const Lock = await ethers.getContractFactory("Lock");
-    const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+    // Deploy PublicSale contract
+    PublicSale = await ethers.getContractFactory("PublicSale");
+    publicSale = await PublicSale.deploy();
+    await publicSale.Initialize(
+      owner.address,
+      saleToken.address,
+      baseToken.address,
+      tokenPrice,
+      maxSpend,
+      amount,
+      hardCap,
+      softCap,
+      startBlock,
+      endBlock,
+      lockPeriod
+    );
 
-    return { lock, unlockTime, lockedAmount, owner, otherAccount };
-  }
+    // Mint and approve tokens
+    await baseToken.mint(addr1.address, ethers.utils.parseUnits("50", 18));
+    await baseToken
+      .connect(addr1)
+      .approve(publicSale.address, ethers.utils.parseUnits("50", 18));
+  });
 
-  describe("Deployment", function () {
-    it("Should set the right unlockTime", async function () {
-      const { lock, unlockTime } = await loadFixture(deployOneYearLockFixture);
-
-      expect(await lock.unlockTime()).to.equal(unlockTime);
-    });
-
-    it("Should set the right owner", async function () {
-      const { lock, owner } = await loadFixture(deployOneYearLockFixture);
-
-      expect(await lock.owner()).to.equal(owner.address);
-    });
-
-    it("Should receive and store the funds to lock", async function () {
-      const { lock, lockedAmount } = await loadFixture(
-        deployOneYearLockFixture
-      );
-
-      expect(await ethers.provider.getBalance(lock.target)).to.equal(
-        lockedAmount
-      );
-    });
-
-    it("Should fail if the unlockTime is not in the future", async function () {
-      // We don't use the fixture here because we want a different deployment
-      const latestTime = await time.latest();
-      const Lock = await ethers.getContractFactory("Lock");
-      await expect(Lock.deploy(latestTime, { value: 1 })).to.be.revertedWith(
-        "Unlock time should be in the future"
+  describe("Initialization", function () {
+    it("Should initialize correctly", async function () {
+      const publicSaleInfo = await publicSale.PUBLICSALE_INFO();
+      expect(publicSaleInfo.PRESALE_OWNER).to.equal(owner.address);
+      expect(publicSaleInfo.S_TOKEN).to.equal(saleToken.address);
+      expect(publicSaleInfo.B_TOKEN).to.equal(baseToken.address);
+      expect(publicSaleInfo.TOKEN_PRICE.toString()).to.equal(
+        tokenPrice.toString()
       );
     });
   });
 
-  describe("Withdrawals", function () {
-    describe("Validations", function () {
-      it("Should revert with the right error if called too soon", async function () {
-        const { lock } = await loadFixture(deployOneYearLockFixture);
+  describe("Deposit", function () {
+    it("Should allow owner to deposit tokens", async function () {
+      await saleToken.mint(owner.address, ethers.utils.parseUnits("1000", 18));
+      await saleToken
+        .connect(owner)
+        .approve(publicSale.address, ethers.utils.parseUnits("1000", 18));
+      await publicSale
+        .connect(owner)
+        .deposit(ethers.utils.parseUnits("500", 18));
 
-        await expect(lock.withdraw()).to.be.revertedWith(
-          "You can't withdraw yet"
-        );
-      });
-
-      it("Should revert with the right error if called from another account", async function () {
-        const { lock, unlockTime, otherAccount } = await loadFixture(
-          deployOneYearLockFixture
-        );
-
-        // We can increase the time in Hardhat Network
-        await time.increaseTo(unlockTime);
-
-        // We use lock.connect() to send a transaction from another account
-        await expect(lock.connect(otherAccount).withdraw()).to.be.revertedWith(
-          "You aren't the owner"
-        );
-      });
-
-      it("Shouldn't fail if the unlockTime has arrived and the owner calls it", async function () {
-        const { lock, unlockTime } = await loadFixture(
-          deployOneYearLockFixture
-        );
-
-        // Transactions are sent using the first signer by default
-        await time.increaseTo(unlockTime);
-
-        await expect(lock.withdraw()).not.to.be.reverted;
-      });
+      expect(await saleToken.balanceOf(publicSale.address)).to.equal(
+        ethers.utils.parseUnits("500", 18)
+      );
     });
 
-    describe("Events", function () {
-      it("Should emit an event on withdrawals", async function () {
-        const { lock, unlockTime, lockedAmount } = await loadFixture(
-          deployOneYearLockFixture
-        );
-
-        await time.increaseTo(unlockTime);
-
-        await expect(lock.withdraw())
-          .to.emit(lock, "Withdrawal")
-          .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
-      });
+    it("Should fail if non-owner tries to deposit tokens", async function () {
+      await expect(
+        publicSale.connect(addr1).deposit(ethers.utils.parseUnits("500", 18))
+      ).to.be.revertedWith("Unauthorized");
     });
+  });
 
-    describe("Transfers", function () {
-      it("Should transfer the funds to the owner", async function () {
-        const { lock, unlockTime, lockedAmount, owner } = await loadFixture(
-          deployOneYearLockFixture
-        );
+  describe("Purchase", function () {
+    it("Should allow users to purchase tokens", async function () {
+      await publicSale
+        .connect(owner)
+        .deposit(ethers.utils.parseUnits("500", 18));
 
-        await time.increaseTo(unlockTime);
+      await publicSale
+        .connect(addr1)
+        .purchase(ethers.utils.parseUnits("5", 18));
 
-        await expect(lock.withdraw()).to.changeEtherBalances(
-          [owner, lock],
-          [lockedAmount, -lockedAmount]
-        );
-      });
+      const buyerInfo = await publicSale.BUYERS(addr1.address);
+      expect(buyerInfo.baseDeposited.toString()).to.equal(
+        ethers.utils.parseUnits("5", 18).toString()
+      );
+      // Token amount calculation: 5 base token * 10^18 / tokenPrice
+      const tokens = ethers.utils
+        .parseUnits("5", 18)
+        .mul(ethers.constants.WeiPerEther)
+        .div(tokenPrice);
+      expect(buyerInfo.tokensOwed.toString()).to.equal(tokens.toString());
+    });
+  });
+
+  describe("Finalize", function () {
+    it("Should finalize the sale as succeeded", async function () {
+      await publicSale
+        .connect(owner)
+        .deposit(ethers.utils.parseUnits("500", 18));
+      await ethers.provider.send("evm_mine", [endBlock + 1]);
+
+      await publicSale.connect(owner).finalize();
+      const state = await publicSale.STATE();
+      expect(state).to.equal(2); // SUCCEEDED state
+    });
+  });
+
+  describe("Refund", function () {
+    it("Should allow refund if sale fails", async function () {
+      await publicSale
+        .connect(owner)
+        .deposit(ethers.utils.parseUnits("500", 18));
+      await publicSale.connect(owner).cancel();
+
+      const balanceBefore = await baseToken.balanceOf(addr1.address);
+      await publicSale.connect(addr1).refund();
+      const balanceAfter = await baseToken.balanceOf(addr1.address);
+
+      expect(balanceAfter.sub(balanceBefore)).to.equal(
+        ethers.utils.parseUnits("5", 18)
+      );
+    });
+  });
+
+  describe("Lock", function () {
+    it("Should lock tokens if sale is successful", async function () {
+      await publicSale
+        .connect(owner)
+        .deposit(ethers.utils.parseUnits("500", 18));
+      await publicSale
+        .connect(addr1)
+        .purchase(ethers.utils.parseUnits("5", 18));
+      await ethers.provider.send("evm_mine", [endBlock + 1]);
+      await publicSale.connect(owner).finalize();
+
+      const balanceBefore = await saleToken.balanceOf(
+        PUBLICSALE_INFO.PRESALE_OWNER
+      );
+      await publicSale.connect(owner).lock();
+      const balanceAfter = await saleToken.balanceOf(
+        PUBLICSALE_INFO.PRESALE_OWNER
+      );
+
+      expect(balanceAfter.sub(balanceBefore)).to.equal(
+        ethers.utils.parseUnits("5", 18)
+      );
     });
   });
 });
