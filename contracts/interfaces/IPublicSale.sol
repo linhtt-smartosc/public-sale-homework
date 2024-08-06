@@ -197,4 +197,11 @@ interface IPublicSale {
      * @return A boolean value indicating whether the purchase was successful.
      */
     function purchase() external returns (bool);
+
+    /**
+     * @dev Locks the public sale contract to prevent further modifications.
+     * 
+     * @return A boolean value indicating whether the contract was successfully locked.
+     */
+    function lock() external returns (bool);
 }

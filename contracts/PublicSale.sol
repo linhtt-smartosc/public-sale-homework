@@ -45,14 +45,14 @@ abstract contract PublicSale is IPublicSale {
         SUCCEEDED
     }
 
-    constructor(address owner) {
-        // Additional constructor logic if needed
-    }
-
     PublicsaleInfo public PUBLICSALE_INFO;
     PublicsaleStatus public PUBLICSALE_STATUS;
     States public STATE;
     uint256 public FEE;
+
+    constructor(address owner) {
+        // Additional constructor logic if needed
+    }
 
     function deposit() external override returns (uint256) {}
 
@@ -65,4 +65,6 @@ abstract contract PublicSale is IPublicSale {
     function claim() external override returns (uint256) {}
 
     function refund() external override returns (uint256) {}
+
+    function lock() external override returns (bool) {}
 }
