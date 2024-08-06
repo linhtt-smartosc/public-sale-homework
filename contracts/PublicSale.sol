@@ -35,22 +35,30 @@ abstract contract PublicSale is IPublicSale {
         uint256 ROUND1_LENGTH; // in blocks (END_BLOCK - START_BLOCK)
         uint256 NUM_BUYERS; // number of unique participants
     }
-    struct PublicSaleFee {
-        uint256 OCTOFI_BASE_FEE; // divided by 1000
-        uint256 OCTOFI_TOKEN_FEE; // divided by 1000
-        uint256 REFERRAL_FEE; // divided by 1000
-        address payable BASE_FEE_ADDRESS;
-        address payable TOKEN_FEE_ADDRESS;
-        address payable REFERRAL_FEE_ADDRESS; // if this is not address(0), there is a valid referral
+
+    enum States {
+        CREATED,
+        INITIALIZED, // after init
+        STARTED, // after deposit 
+        FORCE_FAILED, // force failed by owner
+        FAILED,
+        SUCCEEDED
     }
 
     constructor(address owner) {
         // Additional constructor logic if needed
     }
 
+    PublicsaleInfo public PUBLICSALE_INFO;
+    PublicsaleStatus public PUBLICSALE_STATUS;
+    States public STATE;
+    uint256 public FEE;
+
     function deposit() external override returns (uint256) {}
 
     function finalize() external override returns (bool) {}
+
+    function purchase() external override returns (bool) {}
 
     function cancel() external override returns (bool) {}
 

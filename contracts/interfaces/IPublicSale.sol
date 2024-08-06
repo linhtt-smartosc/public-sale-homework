@@ -185,4 +185,16 @@ interface IPublicSale {
      * @return The amount of funds refunded to the caller.
      */
     function refund() external returns (uint256);
+
+    /**
+     * @dev Enables participants to purchase tokens during the public sale event.
+     * This function is typically called by participants to contribute funds and
+     * receive tokens in return.
+     * 
+     * @notice The function should revert if the public sale is not active or if the
+     * participant's contribution exceeds the maximum allowed per buyer.
+     * 
+     * @return A boolean value indicating whether the purchase was successful.
+     */
+    function purchase() external returns (bool);
 }
