@@ -81,7 +81,6 @@ interface IPublicSale {
      */
     error InvalidLiquidityValue();
 
-
     /**
      * @dev Emitted when the pool validation parameters provided to the contract are invalid.
      */
@@ -196,7 +195,7 @@ interface IPublicSale {
      * 
      * @return A boolean value indicating whether the purchase was successful.
      */
-    function purchase() external returns (bool);
+    function purchase(address beneficiary, uint256 contribution) external returns (bool);
 
     /**
      * @dev Locks the public sale contract to prevent further modifications.
