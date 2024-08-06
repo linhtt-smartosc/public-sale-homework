@@ -8,7 +8,7 @@ pragma solidity ^0.8.19;
  * contributions. Implementing contracts should provide the logic for these
  * operations in the context of a public sale event.
  */
-interface IPublicsale {
+interface IPublicSale {
     
     /**
      * @dev Emitted when an unauthorized address attempts an action requiring specific permissions.

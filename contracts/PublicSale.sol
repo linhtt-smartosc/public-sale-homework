@@ -7,7 +7,7 @@ import { IERC20 } from "./interfaces/IERC20.sol";
 import { IPublicSale } from "./interfaces/IPublicSale.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
  
-contract PublicSale is IPublicSale, Ownable {
+abstract contract PublicSale is IPublicSale {
     struct PublicsaleInfo {
         address payable PRESALE_OWNER; // who create the sale
         IERC20 S_TOKEN; // sale token
@@ -43,4 +43,18 @@ contract PublicSale is IPublicSale, Ownable {
         address payable TOKEN_FEE_ADDRESS;
         address payable REFERRAL_FEE_ADDRESS; // if this is not address(0), there is a valid referral
     }
+
+    constructor(address owner) {
+        // Additional constructor logic if needed
+    }
+
+    function deposit() external override returns (uint256) {}
+
+    function finalize() external override returns (bool) {}
+
+    function cancel() external override returns (bool) {}
+
+    function claim() external override returns (uint256) {}
+
+    function refund() external override returns (uint256) {}
 }
