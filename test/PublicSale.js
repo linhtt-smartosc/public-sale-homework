@@ -5,7 +5,9 @@ const {
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { MockERC20 } = require("../contracts/MockERC20");
+const MockERC20_ABI = require("../artifacts/contracts/ERC20Mock.sol/ERC20Mock.json").abi;
+const PublicSale_ABI = require("../artifacts/contracts/PublicSale.sol/PublicSale.json").abi;
+
 
 describe("PublicSale", function () {
   let PublicSale, publicSale, owner, addr1, addr2;
@@ -19,10 +21,13 @@ describe("PublicSale", function () {
 
   beforeEach(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
-    const MockERC20 = await ethers.getContractFactory("ERC20Mock");
-    console.log(MockERC20);
+
+    const MockERC20 = new ethers.ContractFactory(MockERC20_ABI, owner);
+    const PublicSale = new ethers.ContractFactory(PublicSale_ABI, owner);
     
     saleToken = await MockERC20.deploy("SaleToken", "ST");
+    console.log("Sale Token: ", saleToken.address);
+    
     baseToken = await MockERC20.deploy("BaseToken", "BT");
 
     PublicSale = await ethers.getContractFactory("PublicSale");

@@ -7,13 +7,19 @@ import {IPublicSale} from "./interfaces/IPublicSale.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Error} from "./interfaces/Error.sol";
+import {Events} from "./interfaces/Events.sol";
 
-contract PublicSale is IPublicSale, Ownable {
+contract PublicSale is IPublicSale, Ownable, Error, Events {
     using SafeERC20 for IERC20;
     struct PublicsaleInfo {
         address payable PRESALE_OWNER; // who create the sale
         IERC20 S_TOKEN; // sale token
         IERC20 B_TOKEN; // base token // usually WETH (ETH), stable tokens
+        uint8 S_TOKEN_DECIMALS; // sale token decimals
+        uint8 B_TOKEN_DECIMALS; // base token decimals
         uint256 TOKEN_RATE; // 1 base token = ? s_tokens, fixed price
         uint256 MAX_SPEND_PER_BUYER; // maximum base token BUY amount/account
         uint256 AMOUNT; // the amount of presale tokens up for presale
@@ -38,42 +44,55 @@ contract PublicSale is IPublicSale, Ownable {
 
     PublicsaleInfo public publicsale_info;
     PublicsaleStatus public publicsale_status;
-    mapping(address => BuyerInfo) public BUYERS;
+    mapping(address => BuyerInfo) private BUYERS;
+
 
     constructor(
         address _s_token_address,
         address _b_token_address,
-        uint256 _token_rate,
+        uint8 _b_token_decimals,
+        uint8 _s_token_decimals,
         uint256 _max_spend_per_buyer,
+        uint256 _token_rate,
         uint256 _hardcap,
         uint256 _softcap,
         uint256 _duration
     ) Ownable(msg.sender) {
         if (_hardcap < _softcap) revert InvalidCapValue();
-        publicsale_info.PRESALE_OWNER = payable(msg.sender);
-        publicsale_info.S_TOKEN = IERC20(_s_token_address);
-        publicsale_info.B_TOKEN = IERC20(_b_token_address);
-        publicsale_info.TOKEN_RATE = _token_rate;
-        publicsale_info.MAX_SPEND_PER_BUYER = _max_spend_per_buyer;
-        publicsale_info.HARDCAP = _hardcap;
-        publicsale_info.SOFTCAP = _softcap;
-        publicsale_info.DURATION = _duration;
+        publicsale_info = PublicsaleInfo({
+            PRESALE_OWNER: payable(msg.sender),
+            S_TOKEN: IERC20(_s_token_address),
+            B_TOKEN: IERC20(_b_token_address),
+            S_TOKEN_DECIMALS: _s_token_decimals,
+            B_TOKEN_DECIMALS: _b_token_decimals,
+            TOKEN_RATE: _token_rate,
+            MAX_SPEND_PER_BUYER: _max_spend_per_buyer,
+            AMOUNT: 0,
+            HARDCAP: _hardcap,
+            SOFTCAP: _softcap,
+            START_TIME: 0,
+            END_TIME: 0,
+            DURATION: _duration
+        });
     }
 
     modifier inValidTime() {
-        require(
-            block.timestamp >= publicsale_info.START_TIME &&
-                block.timestamp <= publicsale_info.END_TIME,
-            "Invalid time"
-        );
+        if (
+            block.timestamp < publicsale_info.START_TIME &&
+            block.timestamp > publicsale_info.END_TIME
+        ) revert InvalidTimestampValue();
         _;
     }
 
-    function deposit(uint256 _amount) external payable onlyOwner returns (uint256) {
+    function deposit(uint256 _amount) external payable onlyOwner {
         require(publicsale_info.AMOUNT == 0, "Deposit not allowed");
+        require(publicsale_info.START_TIME == 0, "Deposit not allowed");
+
         publicsale_info.AMOUNT = _amount;
         publicsale_info.START_TIME = block.timestamp;
-        publicsale_info.END_TIME = publicsale_info.START_TIME + publicsale_info.DURATION;
+        publicsale_info.END_TIME =
+            publicsale_info.START_TIME +
+            publicsale_info.DURATION;
 
         publicsale_info.S_TOKEN.safeTransferFrom(
             msg.sender,
@@ -82,8 +101,6 @@ contract PublicSale is IPublicSale, Ownable {
         );
 
         emit Deposit(msg.sender, _amount, block.timestamp);
-
-        return publicsale_info.AMOUNT;
     }
 
     function status() private view returns (States) {
@@ -100,7 +117,7 @@ contract PublicSale is IPublicSale, Ownable {
         return States.STARTED;
     }
 
-    function purchase(uint256 _base_token_amount) external inValidTime returns (bool) {
+    function purchase(uint256 _base_token_amount) external inValidTime {
         require(status() == States.STARTED, "Purchase not allowed");
         if (_base_token_amount > publicsale_info.MAX_SPEND_PER_BUYER)
             revert PurchaseLimitExceed(publicsale_info.MAX_SPEND_PER_BUYER);
@@ -116,31 +133,40 @@ contract PublicSale is IPublicSale, Ownable {
             publicsale_info.HARDCAP
         ) revert HardCapExceed(remaining);
 
-        BUYERS[msg.sender].baseDeposited += _base_token_amount;
-        uint256 tokenOwed = _base_token_amount / publicsale_info.TOKEN_RATE;
-        BUYERS[msg.sender].tokensOwed += tokenOwed;
-        publicsale_status.TOTAL_BASE_COLLECTED += _base_token_amount;
-        publicsale_status.TOTAL_TOKENS_SOLD += tokenOwed;
-        publicsale_status.NUM_BUYERS += 1;
+        uint8 b_decimals = publicsale_info.B_TOKEN_DECIMALS;
+        uint8 s_decimals = publicsale_info.S_TOKEN_DECIMALS;
+        uint256 tokenRate = publicsale_info.TOKEN_RATE;
+
+        unchecked {
+            BUYERS[msg.sender].baseDeposited += _base_token_amount;
+            uint256 tokenOwed = (_base_token_amount * b_decimals) / (tokenRate * s_decimals);
+            BUYERS[msg.sender].tokensOwed += tokenOwed;
+            publicsale_status.TOTAL_BASE_COLLECTED += _base_token_amount;
+            publicsale_status.TOTAL_TOKENS_SOLD += tokenOwed;
+            publicsale_status.NUM_BUYERS += 1;
+        }
+
+        publicsale_info.B_TOKEN.safeTransferFrom(
+            msg.sender,
+            address(this),
+            _base_token_amount
+        );
 
         emit Purchase(msg.sender, _base_token_amount);
-
-        return true;
     }
 
-    function cancel() external onlyOwner inValidTime returns (bool) {
+    function cancel() external onlyOwner inValidTime {
         require(status() == States.STARTED, "Cancel not allowed");
+
         publicsale_status.FORCE_FAILED = true;
         publicsale_info.END_TIME = block.timestamp;
 
         emit Cancel(msg.sender, block.timestamp);
-
-        return true;
     }
 
-    function claim() external returns (uint256) {
+    function claim() public {
         require(status() == States.SUCCEEDED, "Claim not allowed");
-        require(BUYERS[msg.sender].tokensOwed > 0, "No tokens to claim");
+        if (BUYERS[msg.sender].tokensOwed == 0) revert NotClaimable();
         if (
             publicsale_status.TOTAL_TOKENS_WITHDRAWN +
                 BUYERS[msg.sender].tokensOwed >
@@ -149,26 +175,23 @@ contract PublicSale is IPublicSale, Ownable {
 
         uint256 amount = BUYERS[msg.sender].tokensOwed;
         BUYERS[msg.sender].tokensOwed = 0;
+
         publicsale_info.S_TOKEN.safeTransferFrom(
             address(this),
             msg.sender,
             amount
         );
 
-        emit TokenClaim(msg.sender, amount, block.timestamp);
-
-        return amount;
+        emit TokenClaimed(msg.sender, amount, block.timestamp);
     }
 
-    function refund() external returns (uint256) {
+    function refund() public {
+        States state = status();
         require(
-            (status() == States.FORCE_FAILED || status() == States.FAILED),
+            (state == States.FORCE_FAILED || state == States.FAILED),
             "Refund not allowed"
         );
-        require(
-            BUYERS[msg.sender].baseDeposited > 0,
-            "No base tokens to refund"
-        );
+        if (BUYERS[msg.sender].baseDeposited == 0) revert NotRefundable();
         if (
             publicsale_status.TOTAL_BASE_WITHDRAWN +
                 BUYERS[msg.sender].baseDeposited >
@@ -184,8 +207,5 @@ contract PublicSale is IPublicSale, Ownable {
         );
 
         emit Refund(msg.sender, amount, block.timestamp);
-
-        return amount;
     }
-
 }
