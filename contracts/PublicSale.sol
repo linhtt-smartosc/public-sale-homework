@@ -9,6 +9,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 abstract contract PublicSale is IPublicSale, Ownable, IERC20 {
+    
     struct PublicsaleInfo {
         address payable PRESALE_OWNER; // who create the sale
         IERC20 S_TOKEN; // sale token
@@ -26,7 +27,7 @@ abstract contract PublicSale is IPublicSale, Ownable, IERC20 {
         uint256 baseDeposited; // total base token (usually ETH) deposited by user, can be withdrawn on presale failure
         uint256 tokensOwed; // num presale tokens a user is owed, can be withdrawn on presale success
     }
-    mapping(address => BuyerInfo) public BUYERS;
+
     struct PublicsaleStatus {
         bool FORCE_FAILED; // set this flag to force fail the presale
         uint256 TOTAL_BASE_COLLECTED; // total base currency raised
@@ -45,7 +46,7 @@ abstract contract PublicSale is IPublicSale, Ownable, IERC20 {
         FAILED,
         SUCCEEDED
     }
-
+    mapping(address => BuyerInfo) private BUYERS;
     PublicsaleInfo public PUBLICSALE_INFO;
     PublicsaleStatus public PUBLICSALE_STATUS;
     States public STATE;
@@ -67,7 +68,7 @@ abstract contract PublicSale is IPublicSale, Ownable, IERC20 {
         uint256 _startBlock,
         uint256 _endBlock,
         uint256 _lockPeriod
-    ) external onlyOwner {
+    ) public onlyOwner {
         if (STATE == States.CREATED) revert Unauthorized();
 
         PUBLICSALE_INFO = PublicsaleInfo({
@@ -82,11 +83,14 @@ abstract contract PublicSale is IPublicSale, Ownable, IERC20 {
             START_BLOCK: _startBlock,
             END_BLOCK: _endBlock,
             LOCK_PERIOD: _lockPeriod
+            // _owner,
+            // _saleTOken
+            // _baseToken
         });
         STATE = States.INITIALIZED;
     }
 
-    function deposit(uint256 _amount) external onlyOwner returns (uint256) {
+    function deposit(uint256 _amount) external payable {
         if (STATE == States.INITIALIZED) revert Unauthorized();
         if (msg.sender == PUBLICSALE_INFO.PRESALE_OWNER) revert Unauthorized();
         require(
@@ -99,12 +103,14 @@ abstract contract PublicSale is IPublicSale, Ownable, IERC20 {
         );
         emit Deposit(PUBLICSALE_INFO.PRESALE_OWNER, _amount, block.timestamp);
         STATE = States.STARTED;
-        return _amount;
     }
 
     function finalize() external override returns (bool) {
         if (STATE == States.STARTED) revert("Sale not start");
-        if (block.number > PUBLICSALE_INFO.END_BLOCK) revert("Sale not ended");
+        unchecked {
+            if (block.number > PUBLICSALE_INFO.END_BLOCK)
+                revert("Sale not ended");
+        }
         if (
             PUBLICSALE_STATUS.TOTAL_BASE_COLLECTED >= PUBLICSALE_INFO.SOFTCAP &&
             block.timestamp > PUBLICSALE_INFO.END_BLOCK
@@ -192,13 +198,19 @@ abstract contract PublicSale is IPublicSale, Ownable, IERC20 {
     }
 
     function lock() external override returns (bool) {
-        if(STATE != States.SUCCEEDED) revert("Sale not successful");
+        if (STATE != States.SUCCEEDED) revert("Sale not successful");
 
         uint256 totalCollected = PUBLICSALE_STATUS.TOTAL_BASE_COLLECTED;
         uint256 totalTokenSold = PUBLICSALE_STATUS.TOTAL_TOKENS_SOLD;
 
-        if(PUBLICSALE_INFO.PRESALE_OWNER == address(0)) revert("you need set address");
-        if(PUBLICSALE_INFO.S_TOKEN.transfer(PUBLICSALE_INFO.PRESALE_OWNER,totalTokenSold )) revert("Token lock fail");
+        if (PUBLICSALE_INFO.PRESALE_OWNER == address(0))
+            revert("you need set address");
+        if (
+            PUBLICSALE_INFO.S_TOKEN.transfer(
+                PUBLICSALE_INFO.PRESALE_OWNER,
+                totalTokenSold
+            )
+        ) revert("Token lock fail");
 
         //emit lock(msg.sender,block.timestamp);
         return true;

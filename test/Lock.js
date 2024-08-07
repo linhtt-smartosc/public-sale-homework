@@ -44,10 +44,10 @@ describe("PublicSale Contract", function () {
     );
 
     // Mint and approve tokens
-    await baseToken.mint(addr1.address, ethers.utils.parseUnits("50", 18));
+    await baseToken.mint(addr1.address, ethers.parseUnits("50", 18));
     await baseToken
       .connect(addr1)
-      .approve(publicSale.address, ethers.utils.parseUnits("50", 18));
+      .approve(publicSale.address, ethers.parseUnits("50", 18));
   });
 
   describe("Initialization", function () {
@@ -64,13 +64,11 @@ describe("PublicSale Contract", function () {
 
   describe("Deposit", function () {
     it("Should allow owner to deposit tokens", async function () {
-      await saleToken.mint(owner.address, ethers.utils.parseUnits("1000", 18));
+      await saleToken.mint(owner.address, ethers.parseUnits("1000", 18));
       await saleToken
         .connect(owner)
-        .approve(publicSale.address, ethers.utils.parseUnits("1000", 18));
-      await publicSale
-        .connect(owner)
-        .deposit(ethers.utils.parseUnits("500", 18));
+        .approve(publicSale.address, ethers.parseUnits("1000", 18));
+      await publicSale.connect(owner).deposit(ethers.parseUnits("500", 18));
 
       expect(await saleToken.balanceOf(publicSale.address)).to.equal(
         ethers.utils.parseUnits("500", 18)
@@ -79,20 +77,16 @@ describe("PublicSale Contract", function () {
 
     it("Should fail if non-owner tries to deposit tokens", async function () {
       await expect(
-        publicSale.connect(addr1).deposit(ethers.utils.parseUnits("500", 18))
+        publicSale.connect(addr1).deposit(ethers.parseUnits("500", 18))
       ).to.be.revertedWith("Unauthorized");
     });
   });
 
   describe("Purchase", function () {
     it("Should allow users to purchase tokens", async function () {
-      await publicSale
-        .connect(owner)
-        .deposit(ethers.utils.parseUnits("500", 18));
+      await publicSale.connect(owner).deposit(ethers.parseUnits("500", 18));
 
-      await publicSale
-        .connect(addr1)
-        .purchase(ethers.utils.parseUnits("5", 18));
+      await publicSale.connect(addr1).purchase(ethers.parseUnits("5", 18));
 
       const buyerInfo = await publicSale.BUYERS(addr1.address);
       expect(buyerInfo.baseDeposited.toString()).to.equal(
@@ -109,9 +103,7 @@ describe("PublicSale Contract", function () {
 
   describe("Finalize", function () {
     it("Should finalize the sale as succeeded", async function () {
-      await publicSale
-        .connect(owner)
-        .deposit(ethers.utils.parseUnits("500", 18));
+      await publicSale.connect(owner).deposit(ethers.parseUnits("500", 18));
       await ethers.provider.send("evm_mine", [endBlock + 1]);
 
       await publicSale.connect(owner).finalize();
