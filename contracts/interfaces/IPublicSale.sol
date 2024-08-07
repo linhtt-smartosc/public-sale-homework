@@ -19,7 +19,7 @@ interface IPublicSale {
      * @dev Emitted when an action is performed in an invalid state.
      * @param currentState The current state of the contract.
      */
-    error InvalidState(uint8 currentState);
+    error InvalidState(States currentState);
 
     /**
      * @dev Emitted when attempting to finalize a public sale that has not reached its soft cap.
@@ -29,7 +29,7 @@ interface IPublicSale {
     /**
      * @dev Emitted when a purchase attempt exceeds the public sale's hard cap.
      */
-    error HardCapExceed();
+    error HardCapExceed(uint256 remaining);
 
     /**
      * @dev Emitted when user with no contribution attempts to claim tokens.
@@ -49,7 +49,7 @@ interface IPublicSale {
     /**
      * @dev Emitted when a participant's purchase would exceed the maximum allowed contribution.
      */
-    error PurchaseLimitExceed();
+    error PurchaseLimitExceed(uint256 maxSpendPerBuyer);
 
     /**
      * @dev Emitted when a refund is requested under conditions that do not permit refunds.
@@ -87,6 +87,13 @@ interface IPublicSale {
      */
     error InvalidTimestampValue();
 
+    enum States {
+        STARTED, 
+        FORCE_FAILED, 
+        FAILED,
+        SUCCEEDED
+    }
+
     /**
      * @dev Emitted when the public sale contract owner deposits tokens for sale.
      * This is usually done before the public sale starts to ensure tokens are available for purchase.
@@ -102,16 +109,7 @@ interface IPublicSale {
      * @param beneficiary Address of the participant who made the purchase.
      * @param contribution Amount of ETH contributed by the participant.
      */
-    event Purchase(address indexed beneficiary, uint256 contribution);
-
-    /**
-     * @dev Emitted when the public sale is successfully finalized. Finalization may involve distributing tokens,
-     * transferring raised funds to a designated wallet, and/or enabling token claim functionality.
-     * @param creator Address of the contract owner who finalized the public sale.
-     * @param amount Total amount of ETH raised in the public sale.
-     * @param timestamp Block timestamp when the finalization occurred.
-     */
-    event Finalized(address indexed creator, uint256 amount, uint256 timestamp);
+    event Purchase(address indexed beneficiary, uint256 contribution); 
 
     /**
      * @dev Emitted when a participant successfully claims a refund. This is typically allowed when the public sale
@@ -133,30 +131,21 @@ interface IPublicSale {
     /**
      * @dev Emitted when the public sale is cancelled by the contract owner. A cancellation may allow participants
      * to claim refunds for their contributions.
-     * @param creator Address of the contract owner who cancelled the public sale.
+     * @param owner Address of the contract owner who cancelled the public sale.
      * @param timestamp Block timestamp when the cancellation occurred.
      */
-    event Cancel(address indexed creator, uint256 timestamp);
+    event Cancel(address owner, uint256 timestamp);
 
     /**
      * @dev Allows for the deposit of public sale tokens by the owner.
      * This function is intended to be called by the public sale contract owner to
      * deposit the tokens that are to be sold during the public sale.
      * 
+     * @param amount Amount of tokens that the owner wants to deposit.
+     * 
      * @return The amount of tokens deposited for the public sale.
      */
-    function deposit() external returns (uint256);
-
-    /**
-     * @dev Finalizes the public sale, allowing for the distribution of tokens to
-     * participants and the withdrawal of funds raised to the beneficiary. This
-     * function is typically called after the public sale ends, assuming it meets
-     * any predefined criteria such as minimum funding goals.
-     * 
-     * @return A boolean value indicating whether the public sale was successfully
-     * finalized.
-     */
-    function finalize() external returns (bool);
+    function deposit(uint256 amount) external payable returns (uint256);
 
     /**
      * @dev Cancels the public sale and enables the refund process for participants.
@@ -191,17 +180,12 @@ interface IPublicSale {
      * This function is typically called by participants to contribute funds and
      * receive tokens in return.
      * 
+     * @param amount Amount of base tokens that the participant wants to deposit to purchase tokens.
      * @notice The function should revert if the public sale is not active or if the
      * participant's contribution exceeds the maximum allowed per buyer.
      * 
      * @return A boolean value indicating whether the purchase was successful.
      */
-    function purchase() external returns (bool);
+    function purchase(uint256 amount) external returns (bool);
 
-    /**
-     * @dev Locks the public sale contract to prevent further modifications.
-     * 
-     * @return A boolean value indicating whether the contract was successfully locked.
-     */
-    function lock() external returns (bool);
 }
