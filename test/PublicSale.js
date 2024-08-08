@@ -1,75 +1,42 @@
-const {
-  time,
-  loadFixture,
-} = require("@nomicfoundation/hardhat-toolbox/network-helpers");
-const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
-const MockERC20_ABI = require("../artifacts/contracts/ERC20Mock.sol/ERC20Mock.json").abi;
-const PublicSale_ABI = require("../artifacts/contracts/PublicSale.sol/PublicSale.json").abi;
+const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
+describe('PublicSale', function () {  
 
-describe("PublicSale", function () {
-  let PublicSale, publicSale, owner, addr1, addr2;
-  let saleToken, baseToken;
-  const maxSpend = ethers.parseUnits("10", 18);
-  const amount = ethers.parseUnits("1000", 18);
-  const hardCap = ethers.parseUnits("100", 18);
-  const softCap = ethers.parseUnits("10", 18);
-  const rate = 10;
-  const duration = 60 * 60 * 24 * 7; // 7 days
-
-  beforeEach(async function () {
-    [owner, addr1, addr2] = await ethers.getSigners();
-
-    const MockERC20 = new ethers.ContractFactory(MockERC20_ABI, owner);
-    const PublicSale = new ethers.ContractFactory(PublicSale_ABI, owner);
+  async function deployContractAndSetVariables() {
+    const [owner, addr1, addr2, addr3] = await ethers.getSigners();
+    const MockERC20 = await ethers.getContractFactory('ERC20Mock');
     
-    saleToken = await MockERC20.deploy("SaleToken", "ST");
-    console.log("Sale Token: ", saleToken.address);
+    const base_token = await MockERC20.connect(owner).deploy(
+      'BaseToken',
+      'BT',
+    );
+    console.log('Base Token Address: ', base_token.address);
     
-    baseToken = await MockERC20.deploy("BaseToken", "BT");
-
-    PublicSale = await ethers.getContractFactory("PublicSale");
-    publicSale = await PublicSale.deploy(
-      saleToken.address,
-      baseToken.address,
-      rate,
-      maxSpend,
-      hardCap,
-      softCap,
-      duration
+    const sale_token = await MockERC20.deploy(
+      'SaleToken',
+      'ST',
     );
 
-    // await baseToken.mint(addr1.address, ethers.utils.parseUnits("50", 18));
-    // await baseToken.mint(addr2.address, ethers.utils.parseUnits("50", 18));
-    // await baseToken.connect(addr1).approve(publicSale.address, ethers.utils.parseUnits("50", 18));
-    // await baseToken.connect(addr2).approve(publicSale.address, ethers.utils.parseUnits("50", 18));
+    const PublicSale = await ethers.getContractFactory('PublicSale');
+    const publicsale = await PublicSale.deploy(
+      '0x2B685c26604E3b95dbAE3deabDE2c83AEFC73C51',  // _s_token_address
+      '0x7D4cbb8B55Ba156D5BBC7C3eBf04c805e9375BAA',  // _b_token_address
+      18,                  // _b_token_decimals
+      18,                  // _s_token_decimals
+      20,                  // _max_spend_per_buyer
+      3,                   // _token_rate
+      100,                 // _hardcap
+      10,                  // _softcap
+      604800               // _duration
+    );
 
-    // await saleToken.mint(publicSale.address, amount);
-    // await saleToken.connect(owner).approve(publicSale.address, amount);
+    return { publicsale, owner, addr1, addr2, addr3 };
+  }
 
-  });
-
-  describe("Deployment", function () {
-    
-    it("Should initialize the contract", async function () {
-      await saleToken.deployed();
-      await baseToken.deployed();
-      console.log("Sale Token: ", saleToken.address);
-
-      expect(await publicSale.saleToken()).to.equal(saleToken.address);
-      expect(await publicSale.baseToken()).to.equal(baseToken.address);
-      expect(await publicSale.rate()).to.equal(rate);
-      expect(await publicSale.maxSpend()).to.equal(maxSpend);
-      expect(await publicSale.hardCap()).to.equal(hardCap);
-      expect(await publicSale.softCap()).to.equal(softCap);
-      expect(await publicSale.duration()).to.equal(duration);
-    });
-  });
-
-  // it("Should be able to deposit", async function () {
-  //   await publicSale.connect(owner).deposit(amount);
-  //   expect(await saleToken.balanceOf(publicSale.address)).to.equal(amount);
-  // });
-});
+  it('Should deploy contract and set the owner correctly', async function () {
+    const { publicsale, owner } = await deployContractAndSetVariables();
+    expect(await publicsale.owner()).to.equal(owner.address);
+  }); 
+})

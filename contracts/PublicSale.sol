@@ -46,7 +46,7 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
     PublicsaleStatus public publicsale_status;
     mapping(address => BuyerInfo) private BUYERS;
 
-
+    
     constructor(
         address _s_token_address,
         address _b_token_address,
@@ -59,6 +59,7 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
         uint256 _duration
     ) Ownable(msg.sender) {
         if (_hardcap < _softcap) revert InvalidCapValue();
+
         publicsale_info = PublicsaleInfo({
             PRESALE_OWNER: payable(msg.sender),
             S_TOKEN: IERC20(_s_token_address),
@@ -133,13 +134,10 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
             publicsale_info.HARDCAP
         ) revert HardCapExceed(remaining);
 
-        uint8 b_decimals = publicsale_info.B_TOKEN_DECIMALS;
-        uint8 s_decimals = publicsale_info.S_TOKEN_DECIMALS;
-        uint256 tokenRate = publicsale_info.TOKEN_RATE;
-
         unchecked {
             BUYERS[msg.sender].baseDeposited += _base_token_amount;
-            uint256 tokenOwed = (_base_token_amount * b_decimals) / (tokenRate * s_decimals);
+            uint256 tokenOwed = (_base_token_amount * publicsale_info.B_TOKEN_DECIMALS) /
+                (publicsale_info.TOKEN_RATE * publicsale_info.S_TOKEN_DECIMALS);
             BUYERS[msg.sender].tokensOwed += tokenOwed;
             publicsale_status.TOTAL_BASE_COLLECTED += _base_token_amount;
             publicsale_status.TOTAL_TOKENS_SOLD += tokenOwed;
