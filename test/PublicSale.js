@@ -379,4 +379,55 @@ describe('PublicSale', function () {
     //   }
     // })
   })  
+  describe("Cancel Token", function () {
+    it("Should set status", async function () {
+      const { publicsale, addr1, sale_token, owner, base_token } =
+        await loadFixture(deployContractAndSetVariables);
+      await sale_token.connect(owner).approve(publicsale.getAddress(), 1000);
+      await publicsale.connect(owner).deposit(1000);
+  
+      await base_token.connect(addr1).approve(publicsale.getAddress(), 100);
+      await publicsale.connect(addr1).purchase(10);
+  
+      let publicsaleStatus = await publicsale.publicsale_status();
+  
+      expect(publicsaleStatus[0]).to.equal(false);
+    });
+  
+    it("Cancel success", async function () {
+      const { publicsale, addr1, sale_token, owner, base_token } =
+        await loadFixture(deployContractAndSetVariables);
+      await sale_token.connect(owner).approve(publicsale.getAddress(), 1000);
+      await publicsale.connect(owner).deposit(1000);
+  
+      await base_token.connect(addr1).approve(publicsale.getAddress(), 100);
+      await publicsale.connect(addr1).purchase(10);
+  
+      await publicsale.connect(owner).cancel();
+      let publicsaleStatus = await publicsale.publicsale_status();
+  
+      expect(publicsaleStatus[0]).to.equal(true);
+    });
+  });
+  
+  describe("Refund Token", async function () {
+    it("refund complete", async function () {
+      const { publicsale, addr1, sale_token, owner, base_token } =
+        await loadFixture(deployContractAndSetVariables);
+  
+      await sale_token.connect(owner).approve(publicsale.getAddress(), 10000);
+      await publicsale.connect(owner).deposit(10);
+      const y = await base_token.balanceOf(addr1);
+  
+      await base_token.connect(addr1).approve(publicsale.getAddress(), 10000);
+      await publicsale.connect(addr1).purchase(10);
+  
+      await publicsale.connect(owner).cancel();
+      await publicsale.connect(addr1).refund();
+  
+      const x = await base_token.balanceOf(addr1);
+  
+      expect(x).to.equal(y);
+    });
+  });
 })

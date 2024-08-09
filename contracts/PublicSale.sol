@@ -183,6 +183,7 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
         emit TokenClaimed(msg.sender, amount, block.timestamp);
     }
 
+
     function refund() public {
         States state = status();
         require(
@@ -198,11 +199,7 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
 
         uint256 amount = BUYERS[msg.sender].baseDeposited;
         BUYERS[msg.sender].baseDeposited = 0;
-        publicsale_info.B_TOKEN.safeTransferFrom(
-            address(this),
-            msg.sender,
-            amount
-        );
+        publicsale_info.B_TOKEN.transfer(msg.sender, amount);
 
         emit Refund(msg.sender, amount, block.timestamp);
     }
