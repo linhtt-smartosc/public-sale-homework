@@ -173,6 +173,7 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
 
         uint256 amount = BUYERS[msg.sender].tokensOwed;
         BUYERS[msg.sender].tokensOwed = 0;
+        publicsale_status.TOTAL_TOKENS_WITHDRAWN += amount;
 
         publicsale_status.TOTAL_TOKENS_WITHDRAWN += amount;
         publicsale_info.S_TOKEN.transfer(
