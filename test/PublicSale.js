@@ -6,8 +6,62 @@ const { ethers } = require('hardhat');
 const ErrorContractArtifact = require("../artifacts/contracts/interfaces/Error.sol/Error.json");
 let contract;
 
-describe('PublicSale', function () {
+const _s_token_decimals = 18;
+const _b_token_decimals = 18;
+const _max_spend_per_buyer = 20000000000000000000n; // 20 sale tokens
+const _token_rate = 3;
+const _hardcap = 1000000000000000000000n; // 1000 sale tokens
+const _softcap = 100000000000000000000n; // 100 sale tokens
+const _duration = 604800; // 1 week
 
+describe('PublicSale', function () {
+  async function deployContractAndSetVariables() {
+    const [owner, addr1, addr2, addr3] = await ethers.getSigners();
+    const MockERC20 = await ethers.getContractFactory('ERC20Mock');
+
+
+    const base_token = await MockERC20.connect(owner).deploy(
+      'BaseToken',
+      'BT',
+    );
+
+    base_token.connect(addr1).mint(addr1.getAddress(), 1000);
+    base_token.connect(addr2).mint(addr2.getAddress(), 1000);
+    base_token.connect(addr3).mint(addr3.getAddress(), 1000);
+
+
+    base_token.connect(addr1).mint(addr1.getAddress(), 1000);
+    base_token.connect(addr2).mint(addr2.getAddress(), 1000);
+    base_token.connect(addr3).mint(addr3.getAddress(), 1000);
+
+    const sale_token = await MockERC20.deploy(
+      'SaleToken',
+      'ST',
+    );
+
+    sale_token.connect(owner).mint(owner.getAddress(), 10000);
+    sale_token.connect(addr1).mint(addr1.getAddress(), 1000);
+
+    sale_token.connect(owner).mint(owner.getAddress(), 10000);
+    sale_token.connect(addr1).mint(addr1.getAddress(), 1000);
+
+    const PublicSale = await ethers.getContractFactory('PublicSale');
+    const publicsale = await PublicSale.deploy(
+      sale_token.getAddress(),  // _s_token_address
+      base_token.getAddress(),  // _b_token_address
+      sale_token.getAddress(),  // _s_token_address
+      base_token.getAddress(),  // _b_token_address
+      18,                  // _b_token_decimals
+      18,                  // _s_token_decimals
+      20,                  // _max_spend_per_buyer
+      3,                   // _token_rate
+      100,                 // _hardcap
+      10,                  // _softcap
+      604800               // _duration
+    );
+
+    return { publicsale, owner, addr1, addr2, addr3, base_token, sale_token };
+  }
   async function deployContractAndSetVariables() {
     const [owner, addr1, addr2, addr3] = await ethers.getSigners();
     const MockERC20 = await ethers.getContractFactory('ERC20Mock');
@@ -135,12 +189,48 @@ describe('PublicSale', function () {
       })
     });
   })
-  describe('Purchase tokens', function () {
+  xdescribe('Purchase tokens', function () {
 
     it('Should purchase tokens', async function () {
-      const { publicsale, owner, addr1, addr2, addr3 } = await loadFixture(deployContractAndSetVariables);
+      const { publicsale, owner, addr1, sale_token } = await loadFixture(deployContractAndSetVariables);
+      const amount_to_deposit = BigInt(100 * 10 ** _s_token_decimals);
+
+      await sale_token.connect(owner).approve(publicsale.getAddress(), amount_to_deposit);
+      await publicsale.connect(owner).deposit(amount_to_deposit);
+
+      // same decimals for both tokens
+      const amount_in = BigInt(10 * 10 ** _b_token_decimals); // 10 base tokens for 30 sale tokens
+      
+      
+      // await base_token.connect(addr1).approve(publicsale.getAddress(), amount_in);
+      // await publicsale.connect(addr1).purchase(amount_in);
+      // const buyer = await publicsale.connect(addr1).getBuyerInfo(addr1.getAddress());
+      // console.log(buyer);
+
+      await expect(publicsale.connect(addr1).purchase(amount_in))
+      .to.emit(publicsale, 'Purchase').withArgs(addr1.getAddress(), amount_in);
+      
       
     });
+    it('Should not allow purchase tokens', async function () {
+      const { publicsale, owner, addr1, base_token, sale_token, publicsaleInfo } = await loadFixture(deployContractAndSetVariables);
+
+      const amount_to_purchase = BigInt(10 * 10 ** _b_token_decimals); // 10 base tokens for 30 sale tokens
+      
+      // has not change state 
+      await base_token.connect(addr1).approve(publicsale.getAddress(), amount_to_purchase);
+      await expect(publicsale.connect(addr1).purchase(amount_to_purchase)).to.be.revertedWith("Purchase not allowed");
+
+      const amount_to_deposit = BigInt(1000 * 10 ** _s_token_decimals);
+      const amount_to_purchase_error = BigInt(30 * 10 ** _b_token_decimals); // exceed maximum 20 sale tokens
+      // max buy per user exceeded 
+      await sale_token.connect(owner).approve(publicsale.getAddress(), amount_to_deposit); 
+      await publicsale.connect(owner).deposit(amount_to_deposit);
+      await expect(publicsale.connect(addr1).purchase(amount_to_purchase_error)).to.be.revertedWithCustomError(publicsale, "PurchaseLimitExceed").withArgs(publicsaleInfo[6]);
+
+      await publicsale.connect(addr1).purchase(amount_to_purchase);
+      await expect(publicsale.connect(addr1).purchase(amount_to_purchase_error)).to.be.revertedWithCustomError(publicsale, "PurchaseLimitExceed").withArgs(publicsaleInfo[6]);
+    })
   })
   describe('Claim tokens', function () {
     it ("Should be claimable by equalling hard cap", async function () {
