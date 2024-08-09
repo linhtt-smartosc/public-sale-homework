@@ -11,10 +11,16 @@ describe('PublicSale', function () {
     const [owner, addr1, addr2, addr3] = await ethers.getSigners();
     const MockERC20 = await ethers.getContractFactory('ERC20Mock');
 
+
     const base_token = await MockERC20.connect(owner).deploy(
       'BaseToken',
       'BT',
     );
+
+    base_token.connect(addr1).mint(addr1.getAddress(), 1000);
+    base_token.connect(addr2).mint(addr2.getAddress(), 1000);
+    base_token.connect(addr3).mint(addr3.getAddress(), 1000);
+
 
     base_token.connect(addr1).mint(addr1.getAddress(), 1000);
     base_token.connect(addr2).mint(addr2.getAddress(), 1000);
@@ -28,8 +34,13 @@ describe('PublicSale', function () {
     sale_token.connect(owner).mint(owner.getAddress(), 10000);
     sale_token.connect(addr1).mint(addr1.getAddress(), 1000);
 
+    sale_token.connect(owner).mint(owner.getAddress(), 10000);
+    sale_token.connect(addr1).mint(addr1.getAddress(), 1000);
+
     const PublicSale = await ethers.getContractFactory('PublicSale');
     const publicsale = await PublicSale.deploy(
+      sale_token.getAddress(),  // _s_token_address
+      base_token.getAddress(),  // _b_token_address
       sale_token.getAddress(),  // _s_token_address
       base_token.getAddress(),  // _b_token_address
       18,                  // _b_token_decimals
@@ -82,7 +93,10 @@ describe('PublicSale', function () {
     return { publicsale, owner, addr1, addr2, addr3, base_token, sale_token };
   }
 
+
+
   it('Should deploy contract and set the owner correctly', async function () {
+    const { publicsale, owner } = await loadFixture(deployContractAndSetVariables);
     const { publicsale, owner } = await loadFixture(deployContractAndSetVariables);
     expect(await publicsale.owner()).to.equal(owner.address);
   });
