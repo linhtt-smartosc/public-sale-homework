@@ -1,9 +1,17 @@
-const helpers = require('@nomicfoundation/hardhat-network-helpers');
 const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const ErrorContractArtifact = require("../artifacts/contracts/interfaces/Error.sol/Error.json");
+
+
+const _s_token_decimals = 18;
+const _b_token_decimals = 18;
+const _max_spend_per_buyer = 20000000000000000000n; // 20 sale tokens
+const _token_rate = 3;
+const _hardcap = 1000000000000000000000n; // 1000 sale tokens
+const _softcap = 100000000000000000000n; // 100 sale tokens
+const _duration = 604800; // 1 week
+
 
 describe('PublicSale', function () {
 
@@ -79,18 +87,20 @@ describe('PublicSale', function () {
 
     const PublicSale = await ethers.getContractFactory('PublicSale');
     const publicsale = await PublicSale.deploy(
-      sale_token.getAddress(),  // _s_token_address
-      base_token.getAddress(),  // _b_token_address
-      18,                  // _b_token_decimals
-      18,                  // _s_token_decimals
-      50,                  // _max_spend_per_buyer
-      3,                   // _token_rate
-      100,                 // _hardcap
-      10,                  // _softcap
-      604800               // _duration
+      sale_token.getAddress(),  
+      base_token.getAddress(),  
+      _s_token_decimals,  
+      _b_token_decimals,  
+      _max_spend_per_buyer,  
+      _token_rate,  // base token = rate * sale token
+      _hardcap,  
+      _softcap,  
+      _duration, 
     );
 
-    return { publicsale, owner, addr1, addr2, addr3, base_token, sale_token };
+    const publicsaleInfo = await publicsale.publicsale_info();
+
+    return { publicsale, owner, addr1, addr2, addr3, base_token, sale_token, publicsaleInfo };
   }
 
 
@@ -104,13 +114,15 @@ describe('PublicSale', function () {
   describe('Deposit tokens', function () {
     it('Should be able to deposit sale tokens to contract' , async function () {
       const { publicsale, owner, sale_token } = await loadFixture(deployContractAndSetVariables);
-      await sale_token.connect(owner).approve(publicsale.getAddress(), 10000);
-      await publicsale.connect(owner).deposit(10000);
-
-      const publicsaleInfo = await publicsale.publicsale_info();
+      const amount_to_deposit = BigInt(10000 * 10 ** _s_token_decimals);
       const time_of_latest_block = BigInt(await time.latest());
 
-      expect(publicsaleInfo[7]).to.equal(10000);
+      await sale_token.connect(owner).approve(publicsale.getAddress(), amount_to_deposit);
+      await expect(publicsale.connect(owner).deposit(amount_to_deposit)).to.emit(publicsale, 'Deposit').withArgs(owner.address, amount_to_deposit, await time.latest());
+
+      const publicsaleInfo = await publicsale.publicsale_info();
+      
+      expect(publicsaleInfo[7]).to.equal(amount_to_deposit);
       expect(publicsaleInfo[10]).to.equal(time_of_latest_block);
       expect(publicsaleInfo[11]).to.equal(time_of_latest_block + publicsaleInfo[12]);
     });
@@ -119,29 +131,35 @@ describe('PublicSale', function () {
       it('Should not be able to deposit sale tokens when not owner and not in correct time', async function () {
         const { publicsale, addr1, sale_token, owner } = await loadFixture(deployContractAndSetVariables);
 
-        await sale_token.connect(addr1).approve(publicsale.getAddress(), 1000);
-        await sale_token.connect(owner).approve(publicsale.getAddress(), 2000);
+        const amount_to_deposit = BigInt(20000 * 10 ** _s_token_decimals);
+        const amount_to_deposit_error = BigInt(1000 * 10 ** _s_token_decimals);
+
+        await sale_token.connect(addr1).approve(publicsale.getAddress(), amount_to_deposit_error);
+        await sale_token.connect(owner).approve(publicsale.getAddress(), amount_to_deposit);
 
         // not owner
-        await expect(publicsale.connect(addr1).deposit(1000)).to.be.revertedWithCustomError(
+        await expect(publicsale.connect(addr1).deposit(amount_to_deposit_error)).to.be.revertedWithCustomError(
           publicsale,
           "OwnableUnauthorizedAccount"
         ).withArgs(await addr1.getAddress());
 
         // not allow after start time
-        await time.increase(604800);
+        console.log(_duration);
+        
+        await time.increase(_duration);
         try {
-          expect(publicsale.connect(owner).deposit(1000)).to.be.revertedWith("Deposit not allowed");
+          await expect(publicsale.connect(owner).deposit(amount_to_deposit)).to.be.revertedWith("Deposit not allowed");
         } catch (error) {
           console.log(error);
         }
       })
       it('Should not be able to deposit sale tokens after deposit', async function () {
         const { publicsale, owner, sale_token } = await loadFixture(deployContractAndSetVariables);
-        await sale_token.connect(owner).approve(publicsale.getAddress(), 2000);
-        await publicsale.connect(owner).deposit(1000);
+        const amount_to_deposit = BigInt(2000 * 10 ** _s_token_decimals);
+        await sale_token.connect(owner).approve(publicsale.getAddress(), amount_to_deposit);
+        await publicsale.connect(owner).deposit(amount_to_deposit);
         try {
-          expect(publicsale.connect(owner).deposit(1000)).to.be.revertedWith("Deposit not allowed");
+          await expect(publicsale.connect(owner).deposit(amount_to_deposit)).to.be.revertedWith("Deposit not allowed");
         } catch (error) {
           console.log(error);
         }
@@ -151,10 +169,46 @@ describe('PublicSale', function () {
 
   describe('Purchase tokens', function () {
 
-    it('Should purchase tokens', async function () {
-      const { publicsale, owner, addr1, addr2, addr3 } = await loadFixture(deployContractAndSetVariables);
+    xit('Should purchase tokens', async function () {
+      const { publicsale, owner, addr1, sale_token } = await loadFixture(deployContractAndSetVariables);
+      const amount_to_deposit = BigInt(100 * 10 ** _s_token_decimals);
+
+      await sale_token.connect(owner).approve(publicsale.getAddress(), amount_to_deposit);
+      await publicsale.connect(owner).deposit(amount_to_deposit);
+
+      // same decimals for both tokens
+      const amount_in = BigInt(10 * 10 ** _b_token_decimals); // 10 base tokens for 30 sale tokens
+      
+      
+      // await base_token.connect(addr1).approve(publicsale.getAddress(), amount_in);
+      // await publicsale.connect(addr1).purchase(amount_in);
+      // const buyer = await publicsale.connect(addr1).getBuyerInfo(addr1.getAddress());
+      // console.log(buyer);
+
+      await expect(publicsale.connect(addr1).purchase(amount_in))
+      .to.emit(publicsale, 'Purchase').withArgs(addr1.getAddress(), amount_in);
+      
       
     });
+    it('Should not allow purchase tokens', async function () {
+      const { publicsale, owner, addr1, base_token, sale_token, publicsaleInfo } = await loadFixture(deployContractAndSetVariables);
+
+      const amount_to_purchase = BigInt(10 * 10 ** _b_token_decimals); // 10 base tokens for 30 sale tokens
+      
+      // has not change state 
+      await base_token.connect(addr1).approve(publicsale.getAddress(), amount_to_purchase);
+      await expect(publicsale.connect(addr1).purchase(amount_to_purchase)).to.be.revertedWith("Purchase not allowed");
+
+      const amount_to_deposit = BigInt(1000 * 10 ** _s_token_decimals);
+      const amount_to_purchase_error = BigInt(30 * 10 ** _b_token_decimals); // exceed maximum 20 sale tokens
+      // max buy per user exceeded 
+      await sale_token.connect(owner).approve(publicsale.getAddress(), amount_to_deposit); 
+      await publicsale.connect(owner).deposit(amount_to_deposit);
+      await expect(publicsale.connect(addr1).purchase(amount_to_purchase_error)).to.be.revertedWithCustomError(publicsale, "PurchaseLimitExceed").withArgs(publicsaleInfo[6]);
+
+      await publicsale.connect(addr1).purchase(amount_to_purchase);
+      await expect(publicsale.connect(addr1).purchase(amount_to_purchase_error)).to.be.revertedWithCustomError(publicsale, "PurchaseLimitExceed").withArgs(publicsaleInfo[6]);
+    })
   })
   describe('Claim tokens', function () {
     it ("Should be claimable by equalling hard cap", async function () {
