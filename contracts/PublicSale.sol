@@ -46,7 +46,6 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
     PublicsaleStatus public publicsale_status;
     mapping(address => BuyerInfo) private BUYERS;
 
-    
     constructor(
         address _s_token_address,
         address _b_token_address,
@@ -136,7 +135,8 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
 
         unchecked {
             BUYERS[msg.sender].baseDeposited += _base_token_amount;
-            uint256 tokenOwed = (_base_token_amount * publicsale_info.B_TOKEN_DECIMALS) /
+            uint256 tokenOwed = (_base_token_amount *
+                publicsale_info.B_TOKEN_DECIMALS) /
                 (publicsale_info.TOKEN_RATE * publicsale_info.S_TOKEN_DECIMALS);
             BUYERS[msg.sender].tokensOwed += tokenOwed;
             publicsale_status.TOTAL_BASE_COLLECTED += _base_token_amount;
@@ -173,6 +173,7 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
 
         uint256 amount = BUYERS[msg.sender].tokensOwed;
         BUYERS[msg.sender].tokensOwed = 0;
+        publicsale_status.TOTAL_TOKENS_WITHDRAWN += amount;
 
         publicsale_info.S_TOKEN.safeTransferFrom(
             address(this),
@@ -198,11 +199,7 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
 
         uint256 amount = BUYERS[msg.sender].baseDeposited;
         BUYERS[msg.sender].baseDeposited = 0;
-        publicsale_info.B_TOKEN.safeTransferFrom(
-            address(this),
-            msg.sender,
-            amount
-        );
+        publicsale_info.B_TOKEN.transfer(msg.sender, amount);
 
         emit Refund(msg.sender, amount, block.timestamp);
     }
