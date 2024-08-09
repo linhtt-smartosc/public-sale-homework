@@ -104,7 +104,7 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
         emit Deposit(msg.sender, _amount, block.timestamp);
     }
 
-    function status() private view returns (States) {
+    function status() public view returns (States) {
         if (publicsale_status.FORCE_FAILED) return States.FORCE_FAILED;
         if (publicsale_status.TOTAL_BASE_COLLECTED >= publicsale_info.HARDCAP)
             return States.SUCCEEDED;
@@ -165,6 +165,7 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
     function claim() public {
         require(status() == States.SUCCEEDED, "Claim not allowed");
         if (BUYERS[msg.sender].tokensOwed == 0) revert NotClaimable();
+        // TOTAL_TOKENS_WITHDRAWN khong duoc update gi ~~  TOTAL_TOKENS_WITHDRAWN = 0
         if (
             publicsale_status.TOTAL_TOKENS_WITHDRAWN +
                 BUYERS[msg.sender].tokensOwed >
