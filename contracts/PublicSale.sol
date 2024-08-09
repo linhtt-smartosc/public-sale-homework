@@ -165,7 +165,6 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
     function claim() public {
         require(status() == States.SUCCEEDED, "Claim not allowed");
         if (BUYERS[msg.sender].tokensOwed == 0) revert NotClaimable();
-        // TOTAL_TOKENS_WITHDRAWN khong duoc update gi ~~  TOTAL_TOKENS_WITHDRAWN = 0
         if (
             publicsale_status.TOTAL_TOKENS_WITHDRAWN +
                 BUYERS[msg.sender].tokensOwed >
@@ -175,8 +174,8 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
         uint256 amount = BUYERS[msg.sender].tokensOwed;
         BUYERS[msg.sender].tokensOwed = 0;
 
-        publicsale_info.S_TOKEN.safeTransferFrom(
-            address(this),
+        publicsale_status.TOTAL_TOKENS_WITHDRAWN += amount;
+        publicsale_info.S_TOKEN.transfer(
             msg.sender,
             amount
         );
