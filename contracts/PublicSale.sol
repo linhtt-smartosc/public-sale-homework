@@ -165,11 +165,6 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
     function claim() public {
         require(status() == States.SUCCEEDED, "Claim not allowed");
         if (BUYERS[msg.sender].tokensOwed == 0) revert NotClaimable();
-        if (
-            publicsale_status.TOTAL_TOKENS_WITHDRAWN +
-                BUYERS[msg.sender].tokensOwed >
-            publicsale_info.AMOUNT
-        ) revert NotClaimable();
 
         uint256 amount = BUYERS[msg.sender].tokensOwed;
         BUYERS[msg.sender].tokensOwed = 0;
