@@ -107,7 +107,6 @@ describe('PublicSale', function () {
 
   it('Should deploy contract and set the owner correctly', async function () {
     const { publicsale, owner } = await loadFixture(deployContractAndSetVariables);
-    const { publicsale, owner } = await loadFixture(deployContractAndSetVariables);
     expect(await publicsale.owner()).to.equal(owner.address);
   });
 
