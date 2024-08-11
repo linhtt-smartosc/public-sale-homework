@@ -86,6 +86,7 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
     }
 
     function deposit(uint256 _amount) external payable onlyOwner {
+        require(_amount > 0, "Deposit not allowed");
         require(publicsale_info.AMOUNT == 0, "Deposit not allowed");
         require(publicsale_info.START_TIME == 0, "Deposit not allowed");
 
@@ -127,25 +128,26 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
             publicsale_info.MAX_SPEND_PER_BUYER
         ) revert PurchaseLimitExceed(publicsale_info.MAX_SPEND_PER_BUYER);
 
-        uint256 remaining = publicsale_info.HARDCAP -
-            publicsale_status.TOTAL_BASE_COLLECTED;
+        uint256 remaining = publicsale_info.HARDCAP - publicsale_status.TOTAL_BASE_COLLECTED;
+
         if (
-            publicsale_status.TOTAL_BASE_COLLECTED + _base_token_amount >
-            publicsale_info.HARDCAP
+            publicsale_status.TOTAL_BASE_COLLECTED + _base_token_amount > publicsale_info.HARDCAP
         ) revert HardCapExceed(remaining);
 
         unchecked {
             BUYERS[msg.sender].baseDeposited += _base_token_amount;
-            uint256 tokenOwed = (_base_token_amount * publicsale_info.B_TOKEN_DECIMALS) /
-                (publicsale_info.TOKEN_RATE * publicsale_info.S_TOKEN_DECIMALS);
+            uint256 tokenOwed = (_base_token_amount * publicsale_info.S_TOKEN_DECIMALS * publicsale_info.TOKEN_RATE) /
+                publicsale_info.B_TOKEN_DECIMALS;
             BUYERS[msg.sender].tokensOwed += tokenOwed;
             publicsale_status.TOTAL_BASE_COLLECTED += _base_token_amount;
             publicsale_status.TOTAL_TOKENS_SOLD += tokenOwed;
             publicsale_status.NUM_BUYERS += 1;
         }
 
+        address buyer = msg.sender;
+
         publicsale_info.B_TOKEN.safeTransferFrom(
-            msg.sender,
+            buyer,
             address(this),
             _base_token_amount
         );
@@ -171,10 +173,7 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
         publicsale_status.TOTAL_TOKENS_WITHDRAWN += amount;
 
         publicsale_status.TOTAL_TOKENS_WITHDRAWN += amount;
-        publicsale_info.S_TOKEN.transfer(
-            msg.sender,
-            amount
-        );
+        publicsale_info.S_TOKEN.transfer(msg.sender, amount);
 
         emit TokenClaimed(msg.sender, amount, block.timestamp);
     }
