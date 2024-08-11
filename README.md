@@ -2,7 +2,7 @@
 ## Prerequisites
 + NodeJS version ^v18.  
 ## ▶️ Flow
-![alt text](flow.drawio.png)
+![alt text](images/flow.drawio.png)
 
 ## 💡 Features
 + **Token Management:** Handle deposits, and manage tokens throughout the public sale lifecycle.
