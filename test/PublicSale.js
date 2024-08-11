@@ -64,6 +64,8 @@ describe('PublicSale', function () {
 
   describe('Deposit tokens', function () {
     it('Should be able to deposit sale tokens to contract', async function () {
+      expect(sale_token.connect(owner).balanceOf(owner.address)).to.equal(10000 * 10 ** S_TOKEN_DECIMALS);
+
       const amount_to_deposit = BigInt(10000 * 10 ** S_TOKEN_DECIMALS);
       const time_of_latest_block = BigInt(await time.latest());
 
