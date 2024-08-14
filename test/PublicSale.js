@@ -298,8 +298,7 @@ describe("PublicSale", function () {
 
 
     //TC05
-    // TODO: Add full test cases
-    xdescribe("Cancel Token", function () {
+    describe("Cancel Token", function () {
         it("Should set status", async function () {
             await sale_token.connect(owner).approve(publicsale.getAddress(), 1000);
             await publicsale.connect(owner).deposit(1000);
@@ -326,22 +325,20 @@ describe("PublicSale", function () {
         });
     });
 
-    xdescribe("Refund Token", async function () {
+    describe("Refund Token", async function () {
         it("refund complete", async function () {
             await sale_token.connect(owner).approve(publicsale.getAddress(), 10000);
             await publicsale.connect(owner).deposit(10);
-            const y = await base_token.balanceOf(addr1);
+            const b_token_balance_addr1_before = await base_token.balanceOf(addr1);
 
             await base_token.connect(addr1).approve(publicsale.getAddress(), 10000);
             await publicsale.connect(addr1).purchase(10);
 
             await publicsale.connect(owner).cancel();
             await publicsale.connect(addr1).refund();
+            const b_token_balance_addr1 = await base_token.balanceOf(addr1);
 
-            // TODO: Set variable to have meaningful name
-            const x = await base_token.balanceOf(addr1);
-
-            expect(x).to.equal(y);
+          expect(b_token_balance_addr1).to.equal(b_token_balance_addr1_before);
         });
     });
 });
