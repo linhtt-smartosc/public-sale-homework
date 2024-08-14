@@ -72,8 +72,8 @@ describe('PublicSale', function () {
       const amount_to_deposit = BigInt(10000 * 10 ** SALE_TOKEN_DECIMALS);
 
       await sale_token.connect(owner).approve(publicsale.getAddress(), amount_to_deposit);
-      await publicsale.connect(owner).deposit(amount_to_deposit);
-      // await expect(publicsale.connect(owner).deposit(amount_to_deposit)).to.emit(publicsale, 'Deposit').withArgs(owner.address, amount_to_deposit, await time.latest());
+
+      await expect(await publicsale.connect(owner).deposit(amount_to_deposit)).to.emit(publicsale, 'Deposit').withArgs(owner.address, amount_to_deposit, await time.latest());
 
       const publicsaleInfo = await publicsale.publicsale_info();
 
