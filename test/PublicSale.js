@@ -38,14 +38,16 @@ describe("PublicSale", function () {
     base_token.connect(addr2).mint(addr2.getAddress(), BASE_TOKEN_MINT_AMOUNT);
     base_token.connect(addr3).mint(addr3.getAddress(), BASE_TOKEN_MINT_AMOUNT);
 
-    sale_token = await MockERC20.deploy(SALE_TOKEN_NAME, SALE_TOKEN_SYMBOL);
-
+    sale_token = await MockERC20.connect(owner).deploy(SALE_TOKEN_NAME, SALE_TOKEN_SYMBOL);
     sale_token.connect(owner).mint(owner.getAddress(), SALE_TOKEN_MINT_AMOUNT);
 
-    const PublicSale = await ethers.getContractFactory("PublicSale");
-    publicsale = await PublicSale.deploy(
-      sale_token.getAddress(),
-      base_token.getAddress(),
+    const publicSaleFactory = await ethers.getContractFactory("PublicSaleFactory");
+    factory = await publicSaleFactory.connect(owner).deploy();
+
+
+    await factory.connect(owner).createPublicSale(
+      await sale_token.getAddress(),
+      await base_token.getAddress(),
       BASE_TOKEN_DECIMALS,
       SALE_TOKEN_DECIMALS,
       MAX_SPEND_PER_BUYER,
@@ -54,11 +56,17 @@ describe("PublicSale", function () {
       SOFT_CAP,
       DURATION
     );
+
+    const publicSales = await factory.getPublicSales();
+    const publicSaleAddress = publicSales[publicSales.length - 1];
+    publicsale = await ethers.getContractAt("PublicSale", publicSaleAddress);
   });
 
   //TC01
   it("Should deploy contract and set the owner correctly", async function () {
-    expect(await publicsale.owner()).to.equal(owner.address);
+    const publicsaleInfo = await publicsale.publicsale_info();
+
+    expect(publicsaleInfo[0]).to.equal(owner.address);
   });
 
   //TC02
@@ -84,6 +92,7 @@ describe("PublicSale", function () {
 
         const publicsaleInfo = await publicsale.publicsale_info();
 
+        expect(await sale_token.balanceOf(publicsale.getAddress())).to.equal(amount_to_deposit);
         expect(publicsaleInfo[7]).to.equal(amount_to_deposit);
         expect(publicsaleInfo[10]).to.equal(await time.latest());
         expect(publicsaleInfo[11]).to.equal(
@@ -115,9 +124,8 @@ describe("PublicSale", function () {
         await expect(publicsale.connect(addr1).deposit(amount_to_deposit_error))
           .to.be.revertedWithCustomError(
             publicsale,
-            "OwnableUnauthorizedAccount"
-          )
-          .withArgs(await addr1.getAddress());
+            "Unauthorized",
+          );
       });
 
       //TC02-02-02
@@ -358,10 +366,6 @@ describe("PublicSale", function () {
       const initialBalanceSaleToken = await sale_token
         .connect(addr2)
         .balanceOf(addr2);
-      console.log(
-        "initialBalanceSaleToken",
-        initialBalanceSaleToken.toString()
-      );
       Promise.all([
         // await publicsale.connect(addr1).claim(),
 
@@ -372,7 +376,6 @@ describe("PublicSale", function () {
       const afterBalanceSaleToken = await sale_token
         .connect(addr2)
         .balanceOf(addr2);
-      console.log("afterBalanceSaleToken", afterBalanceSaleToken.toString());
 
       expect(initialBalanceSaleToken).to.not.equal(
         afterBalanceSaleToken,
