@@ -25,17 +25,8 @@ async function main() {
   const duration = 60 * 60 * 24 * 7; // 7 days
 
   // deploys PublicSale
-  const PublicSale = await ethers.getContractFactory("PublicSale");
+  const PublicSale = await ethers.getContractFactory("PublicSaleFactory");
   const publicSale = await PublicSale.deploy(
-    saleTokenAddress,
-    baseTokenAddress,
-    bTokenDecimals,
-    sTokenDecimals,
-    maxSpendPerBuyer,
-    tokenRate,
-    hardcap,
-    softcap,
-    duration
   );
 
   await publicSale.waitForDeployment();
@@ -45,4 +36,4 @@ async function main() {
 main();
 
 //npx hardhat run scripts/01-deploy-publicsale.js --network bsctest
-//npx hardhat verify --network bsctest 0x629Eff5FdC8558aC0F0d012Bcd4e2b973Fe60DeE "0x660D89566B6801244b5C0B84E4eC772F33ac20D7" "0x5FCfc4c8e5234D5E57bA8E030092CA52b51a8718" 18 18 10000000000000000000 1000 100000000000000000000 30000000000000000000 60480
+//npx hardhat verify --network bsctest 0xa7073a62d49fD6d7C3F46aFfA3b284EE91E886Ac "0xdbD9914D07F8930dE2EA436cE70C882A9B37Cd68" "0xAaa1a48168e720631cDC01F3de1b23de2e8c4F3E" 18 18 10000000000000000000 1000 100000000000000000000 30000000000000000000 60480
