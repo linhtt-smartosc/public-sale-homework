@@ -1,5 +1,4 @@
-import pkg from "hardhat";
-const { ethers } = pkg;
+const { ethers } = require("hardhat");
 
 async function main() {
   const ERC20Mock = await ethers.getContractFactory("ERC20Mock");

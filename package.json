@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy" : "npx hardhat run scripts/01-deploy-publicsale.js --network bsctest"
+    "deploy": "npx hardhat run scripts/01-deploy-publicsale.js --network bsctest"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +21,5 @@
     "dotenv": "^16.4.5",
     "ether": "^0.0.9",
     "public-sale-homework": "file:"
-  },
-  "type": "module"
+  }
 }

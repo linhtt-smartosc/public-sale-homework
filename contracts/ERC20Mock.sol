@@ -7,4 +7,8 @@ contract ERC20Mock is ERC20 {
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _mint(msg.sender, 10000 * 10 ** uint256(decimals()));
     }
+
+    function mint(address account, uint256 amount) public {
+        _mint(account, amount * 10 ** uint256(decimals()));
+    }
 }
