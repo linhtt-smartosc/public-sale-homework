@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
@@ -46,7 +46,6 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
     PublicsaleStatus public publicsale_status;
     mapping(address => BuyerInfo) private BUYERS;
 
-    
     constructor(
         address _s_token_address,
         address _b_token_address,
@@ -96,11 +95,8 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
             publicsale_info.START_TIME +
             publicsale_info.DURATION;
 
-        publicsale_info.S_TOKEN.safeTransferFrom(
-            msg.sender,
-            address(this),
-            _amount
-        );
+        address owner = msg.sender;
+        publicsale_info.S_TOKEN.safeTransferFrom(owner, address(this), _amount);
 
         emit Deposit(msg.sender, _amount, block.timestamp);
     }
@@ -128,16 +124,19 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
             publicsale_info.MAX_SPEND_PER_BUYER
         ) revert PurchaseLimitExceed(publicsale_info.MAX_SPEND_PER_BUYER);
 
-        uint256 remaining = publicsale_info.HARDCAP - publicsale_status.TOTAL_BASE_COLLECTED;
+        uint256 remaining = publicsale_info.HARDCAP -
+            publicsale_status.TOTAL_BASE_COLLECTED;
 
         if (
-            publicsale_status.TOTAL_BASE_COLLECTED + _base_token_amount > publicsale_info.HARDCAP
+            publicsale_status.TOTAL_BASE_COLLECTED + _base_token_amount >
+            publicsale_info.HARDCAP
         ) revert HardCapExceed(remaining);
 
         unchecked {
             BUYERS[msg.sender].baseDeposited += _base_token_amount;
-            uint256 tokenOwed = (_base_token_amount * publicsale_info.S_TOKEN_DECIMALS * publicsale_info.TOKEN_RATE) /
-                publicsale_info.B_TOKEN_DECIMALS;
+            uint256 tokenOwed = (_base_token_amount *
+                publicsale_info.S_TOKEN_DECIMALS *
+                publicsale_info.TOKEN_RATE) / publicsale_info.B_TOKEN_DECIMALS;
             BUYERS[msg.sender].tokensOwed += tokenOwed;
             publicsale_status.TOTAL_BASE_COLLECTED += _base_token_amount;
             publicsale_status.TOTAL_TOKENS_SOLD += tokenOwed;
@@ -177,7 +176,6 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
 
         emit TokenClaimed(msg.sender, amount, block.timestamp);
     }
-
 
     function refund() public {
         States state = status();

@@ -482,7 +482,7 @@ describe("PublicSale", function () {
       expect(b_token_balance_addr1).to.equal(b_token_balance_addr1_before);
     });
     //TC06-02
-
+    S;
     it("should emit Refund event after successful refund", async function () {
       await sale_token
         .connect(owner)
@@ -495,14 +495,12 @@ describe("PublicSale", function () {
       await publicsale.connect(addr1).purchase(amount_to_purchase);
 
       await publicsale.connect(owner).cancel();
-      await expect(await publicsale.connect(addr1).refund())
+      expect(await publicsale.connect(addr1).refund())
         .to.emit(publicsale, "Refund")
         .withArgs(
           addr1.address,
           amount_to_purchase,
-          (
-            await ethers.provider.getBlock("latest")
-          ).timestamp
+          (await ethers.provider.getBlock("latest")).timestamp
         );
     });
   });
