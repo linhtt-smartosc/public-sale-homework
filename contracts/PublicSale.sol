@@ -4,7 +4,6 @@ pragma solidity ^0.8.20;
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 import {IPublicSale} from "./interfaces/IPublicSale.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -12,7 +11,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Error} from "./interfaces/Error.sol";
 import {Events} from "./interfaces/Events.sol";
 
-contract PublicSale is IPublicSale, Ownable, Error, Events {
+contract PublicSale is IPublicSale, Error, Events {
     using SafeERC20 for IERC20;
     struct PublicsaleInfo {
         address payable PRESALE_OWNER; // who create the sale
@@ -46,7 +45,13 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
     PublicsaleStatus public publicsale_status;
     mapping(address => BuyerInfo) private BUYERS;
 
+    modifier onlyOwner() {
+        if (msg.sender != publicsale_info.PRESALE_OWNER) revert Unauthorized();
+        _;
+    }
+
     constructor(
+        address _owner,
         address _s_token_address,
         address _b_token_address,
         uint8 _b_token_decimals,
@@ -56,11 +61,11 @@ contract PublicSale is IPublicSale, Ownable, Error, Events {
         uint256 _hardcap,
         uint256 _softcap,
         uint256 _duration
-    ) Ownable(msg.sender) {
+    ) {
         if (_hardcap < _softcap) revert InvalidCapValue();
 
         publicsale_info = PublicsaleInfo({
-            PRESALE_OWNER: payable(msg.sender),
+            PRESALE_OWNER: payable(_owner),
             S_TOKEN: IERC20(_s_token_address),
             B_TOKEN: IERC20(_b_token_address),
             S_TOKEN_DECIMALS: _s_token_decimals,
