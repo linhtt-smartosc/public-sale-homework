@@ -50,6 +50,7 @@ contract PublicSale is IPublicSale, Error, Events {
         _;
     }
 
+
     constructor(
         address _owner,
         address _s_token_address,
@@ -101,7 +102,12 @@ contract PublicSale is IPublicSale, Error, Events {
             publicsale_info.DURATION;
 
         address owner = msg.sender;
-        publicsale_info.S_TOKEN.safeTransferFrom(owner, address(this), _amount);
+
+        publicsale_info.S_TOKEN.safeTransferFrom(
+            owner,
+            address(this),
+            _amount
+        );
 
         emit Deposit(msg.sender, _amount, block.timestamp);
     }
