@@ -6,7 +6,7 @@ abstract contract Events {
      * @dev Emitted when a new public sale contract is created by the factory.
      * @param publicSale Address of the public sale contract created.
      */
-    event PublicSaleCreated(address publicSale);
+    event PublicSaleCreated(address indexed publicSale);
 
     /**
      * @dev Emitted when the public sale contract owner deposits tokens for sale.
