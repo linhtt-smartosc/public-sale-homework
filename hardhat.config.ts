@@ -1,9 +1,9 @@
-require("hardhat/config");
-require("@nomicfoundation/hardhat-toolbox");
-require("@openzeppelin/hardhat-upgrades");
-require("dotenv").config();
+import { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-toolbox";
+import "@openzeppelin/hardhat-upgrades";
+import 'dotenv/config'
 
-const config = {
+const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
@@ -45,9 +45,16 @@ const config = {
     ],
   },
   networks: {
+    hardhat: {
+      chainId: 1337
+    },
     bsctest: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
-      accounts: [process.env.PRIVATE_KEY],
+      accounts: [process.env.BSC_PRIVATE_KEY!],
+    },
+    sepolia: {
+      url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+      accounts: [process.env.SEPOLIA_PRIVATE_KEY!],
     },
   },
   sourcify: {
@@ -55,4 +62,4 @@ const config = {
   },
 };
 
-module.exports = config;
+export default config;

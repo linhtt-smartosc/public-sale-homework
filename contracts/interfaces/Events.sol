@@ -3,6 +3,11 @@ pragma solidity ^0.8.19;
 
 abstract contract Events {
     /**
+     * @dev Emitted when a new ERC20 token contract is created by the factory.
+     * @param token Address of the ERC20 contract created
+     */
+    event ERC20TokenCreated(address indexed token);
+    /**
      * @dev Emitted when a new public sale contract is created by the factory.
      * @param publicSale Address of the public sale contract created.
      */
