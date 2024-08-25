@@ -13,8 +13,8 @@ async function main() {
   const PublicSale = await ethers.getContractFactory("PublicSaleFactory");
   const publicSale = await PublicSale.deploy();
 
-  await publicSale  console.log("PublicSaleFactory deployed to:", await publicSale.getAddress());
-.waitForDeployment();
+  await publicSale.waitForDeployment();
+  console.log("PublicSaleFactory deployed to:", await publicSale.getAddress());
 }
 
 main().catch(error => {

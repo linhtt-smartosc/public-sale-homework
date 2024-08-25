@@ -18,7 +18,6 @@ const SALE_TOKEN_SYMBOL = "ST";
 async function main() {
 
   const signer = new ethers.Wallet(process.env.BSC_PRIVATE_KEY!, ethers.provider)
-  console.log(signer)
   //NOTE: Deployment of Base Token
   const ERC20Mock = await ethers.getContractFactory("ERC20Mock");
 
@@ -32,14 +31,12 @@ async function main() {
 
   //NOTE: Deployment of Sale Token
   const saleTokenResponse = await saleTokenFactoryDeployed.createSaleToken(SALE_TOKEN_NAME, SALE_TOKEN_SYMBOL);
-  console.log("saleTokenResponse", saleTokenResponse)
   await saleTokenResponse.wait(1)
 
   // await saleTokenFactoryDeployed.deploymentTransaction()!.wait(2)
 
   const saleTokenList = await saleTokenFactoryDeployed.getSaleTokens()
   const saleTokenAddress = saleTokenList[saleTokenList.length - 1];
-  console.log("saleTokenAddress", saleTokenAddress)
   const saleToken = await ethers.getContractAt("SaleToken", saleTokenAddress, signer);
   await saleToken.waitForDeployment();
 
@@ -63,7 +60,6 @@ async function main() {
   await publicSaleResponse.wait(1)
   // await publicSaleContractFactoryDeployed.deploymentTransaction()?.wait(2);
   const publicSaleList = await publicSaleContractFactoryDeployed.getPublicSales()
-  console.log("publicSaleList", publicSaleList)
   const publicSaleAddress = publicSaleList[publicSaleList.length - 1];
   const publicSale = await ethers.getContractAt("PublicSale", publicSaleAddress, signer);
 

@@ -29,17 +29,10 @@ describe("PublicSale", function () {
   let publicSaleContractFactory;
   let publicSaleContractFactoryDeployed;
   
-
-  let saleTokenFactory;
-  let saleTokenFactoryDeployed;
-  
-  let publicSaleContractFactory;
-  let publicSaleContractFactoryDeployed;
   
   let base_token;
   let sale_token;
 
-  before(async function () {
   before(async function () {
     [owner, addr1, addr2, addr3] = await ethers.getSigners();
     //NOTE: Deployment of Sale Token Factory
@@ -76,20 +69,7 @@ describe("PublicSale", function () {
     const saleTokenAddress = saleTokenList[saleTokenList.length - 1];
     sale_token = await ethers.getContractAt("SaleToken", saleTokenAddress);
     // sale_token.connect(owner).mint(owner.getAddress(), SALE_TOKEN_MINT_AMOUNT);
-    //NOTE: Deployment of Sale Token
-    //Already Minted (Fixed pre-mint)
-    await saleTokenFactoryDeployed.connect(owner).createSaleToken(
-      SALE_TOKEN_NAME,
-      SALE_TOKEN_SYMBOL
-    );
-    const saleTokenList = await saleTokenFactoryDeployed.connect(owner).getSaleTokens()
 
-    const saleTokenAddress = saleTokenList[saleTokenList.length - 1];
-    sale_token = await ethers.getContractAt("SaleToken", saleTokenAddress);
-    // sale_token.connect(owner).mint(owner.getAddress(), SALE_TOKEN_MINT_AMOUNT);
-
-    //NOTE: Deployment of Public Sale 
-    await publicSaleContractFactoryDeployed.connect(owner).createPublicSale(
     //NOTE: Deployment of Public Sale 
     await publicSaleContractFactoryDeployed.connect(owner).createPublicSale(
       await sale_token.getAddress(),
@@ -103,7 +83,6 @@ describe("PublicSale", function () {
       DURATION
     );
 
-    const publicSales = await publicSaleContractFactoryDeployed.getPublicSales();
     const publicSales = await publicSaleContractFactoryDeployed.getPublicSales();
     const publicSaleAddress = publicSales[publicSales.length - 1];
     publicsale = await ethers.getContractAt("PublicSale", publicSaleAddress);
