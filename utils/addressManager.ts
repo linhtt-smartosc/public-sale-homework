@@ -1,18 +1,25 @@
 import fs from 'fs'
 import path from 'path'
+export enum Task {
+  deploy_factory,
+  deploy_whole,
+  deploy_base_token,
+}
 export const writeAddresses = async (
+  task: Task,
   chainId: number,
   addresses: any
 ): Promise<void> => {
-  const prevAddresses = await getAddresses(chainId)
+  console.log("acb")
+
+  const prevAddresses = await getAddresses(task, chainId)
   const newAddresses = {
     ...prevAddresses,
     ...addresses
   }
-
   return new Promise((resolve, _reject) => {
     fs.writeFile(
-      getFilePath(getNetworkName(chainId)),
+      getFilePath(task, getNetworkName(chainId)),
       JSON.stringify(newAddresses),
       () => {
         resolve()
@@ -21,8 +28,16 @@ export const writeAddresses = async (
   })
 }
 
-const getFilePath = (networkName: string): string => {
-  return path.join(__dirname, `../addresses - ${networkName}.json`)
+const getFilePath = (task: Task, networkName: string): string => {
+  let taskStr;
+  if (task == 0) {
+    taskStr = "factory"
+  } else if (task == 1) {
+    taskStr = "basetoken"
+  } else if (task == 2) {
+    taskStr = "whole"
+  }
+  return path.join(__dirname, `../addresses-${taskStr}-${networkName}.json`)
 }
 
 const getNetworkName = (chainId: number): string => {
@@ -37,10 +52,10 @@ const getNetworkName = (chainId: number): string => {
   return ''
 }
 
-export const getAddresses = async (chainId: number): Promise<any> => {
+export const getAddresses = async (task: Task, chainId: number): Promise<any> => {
     const networkName = getNetworkName(chainId)
     return new Promise((resolve, reject) => {
-      fs.readFile(getFilePath(networkName), (err, data) => {
+      fs.readFile(getFilePath(task, networkName), {flag: "r"}, (err, data) => {
         if (err) {
           reject(err)
         } else {

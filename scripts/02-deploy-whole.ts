@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { writeAddresses } from "../utils/addressManager";
+import { Task, writeAddresses } from "../utils/addressManager";
 import 'dotenv/config'
 
 const SALE_TOKEN_DECIMALS = 18;
@@ -67,7 +67,7 @@ async function main() {
 
   const chainID = Number((await ethers.provider.getNetwork()).chainId)
 
-  writeAddresses(chainID, {
+  writeAddresses(Task.deploy_whole, chainID, {
     DEPLOYED_SALE_TOKEN_FACTORY_ADDRESS: await saleTokenFactoryDeployed.getAddress(),
     DEPLOYED_PUBLIC_SALE_FACTORY_ADDRESS: await publicSaleContractFactoryDeployed.getAddress(),
 
