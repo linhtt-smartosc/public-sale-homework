@@ -22,11 +22,31 @@ describe("PublicSale", function () {
   let addr1;
   let addr2;
   let addr3;
+
+  let saleTokenFactory;
+  let saleTokenFactoryDeployed;
+  
+  let publicSaleContractFactory;
+  let publicSaleContractFactoryDeployed;
+  
+  
   let base_token;
   let sale_token;
 
-  beforeEach(async function () {
+  before(async function () {
     [owner, addr1, addr2, addr3] = await ethers.getSigners();
+    //NOTE: Deployment of Sale Token Factory
+    saleTokenFactory =  await ethers.getContractFactory("SaleTokenFactory");
+    saleTokenFactoryDeployed = await saleTokenFactory.connect(owner).deploy()
+
+    //NOTE: Deployment of Public Sale Factory
+    publicSaleContractFactory = await ethers.getContractFactory("PublicSaleFactory");
+    publicSaleContractFactoryDeployed = await publicSaleContractFactory.connect(owner).deploy();
+    
+  })
+
+  beforeEach(async function () {
+    //NOTE: Deployment of Base Token
     const MockERC20 = await ethers.getContractFactory("ERC20Mock");
 
     base_token = await MockERC20.connect(owner).deploy(
@@ -38,14 +58,20 @@ describe("PublicSale", function () {
     base_token.connect(addr2).mint(addr2.getAddress(), BASE_TOKEN_MINT_AMOUNT);
     base_token.connect(addr3).mint(addr3.getAddress(), BASE_TOKEN_MINT_AMOUNT);
 
-    sale_token = await MockERC20.connect(owner).deploy(SALE_TOKEN_NAME, SALE_TOKEN_SYMBOL);
-    sale_token.connect(owner).mint(owner.getAddress(), SALE_TOKEN_MINT_AMOUNT);
+    //NOTE: Deployment of Sale Token
+    //Already Minted (Fixed pre-mint)
+    await saleTokenFactoryDeployed.connect(owner).createSaleToken(
+      SALE_TOKEN_NAME,
+      SALE_TOKEN_SYMBOL
+    );
+    const saleTokenList = await saleTokenFactoryDeployed.connect(owner).getSaleTokens()
 
-    const publicSaleFactory = await ethers.getContractFactory("PublicSaleFactory");
-    factory = await publicSaleFactory.connect(owner).deploy();
+    const saleTokenAddress = saleTokenList[saleTokenList.length - 1];
+    sale_token = await ethers.getContractAt("SaleToken", saleTokenAddress);
+    // sale_token.connect(owner).mint(owner.getAddress(), SALE_TOKEN_MINT_AMOUNT);
 
-
-    await factory.connect(owner).createPublicSale(
+    //NOTE: Deployment of Public Sale 
+    await publicSaleContractFactoryDeployed.connect(owner).createPublicSale(
       await sale_token.getAddress(),
       await base_token.getAddress(),
       BASE_TOKEN_DECIMALS,
@@ -57,7 +83,7 @@ describe("PublicSale", function () {
       DURATION
     );
 
-    const publicSales = await factory.getPublicSales();
+    const publicSales = await publicSaleContractFactoryDeployed.getPublicSales();
     const publicSaleAddress = publicSales[publicSales.length - 1];
     publicsale = await ethers.getContractAt("PublicSale", publicSaleAddress);
   });
