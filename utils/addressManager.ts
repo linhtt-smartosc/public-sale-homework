@@ -10,7 +10,6 @@ export const writeAddresses = async (
   chainId: number,
   addresses: any
 ): Promise<void> => {
-  console.log("acb")
 
   const prevAddresses = await getAddresses(task, chainId)
   const newAddresses = {
@@ -33,9 +32,9 @@ const getFilePath = (task: Task, networkName: string): string => {
   if (task == 0) {
     taskStr = "factory"
   } else if (task == 1) {
-    taskStr = "basetoken"
-  } else if (task == 2) {
     taskStr = "whole"
+  } else if (task == 2) {
+    taskStr = "basetoken"
   }
   return path.join(__dirname, `../addresses-${taskStr}-${networkName}.json`)
 }

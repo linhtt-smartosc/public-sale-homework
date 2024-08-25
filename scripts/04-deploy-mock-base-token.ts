@@ -11,10 +11,10 @@ async function main() {
 
   const baseToken = await ERC20Mock.deploy(BASE_TOKEN_NAME, BASE_TOKEN_SYMBOL);
   await baseToken.waitForDeployment()
-
+  console.log(await baseToken.getAddress())
   const chainID = Number((await ethers.provider.getNetwork()).chainId)
 
-  writeAddresses(Task.deploy_base_token,chainID, {
+  writeAddresses(Task.deploy_base_token, chainID, {
     DEPLOYED_BASE_TOKEN_ADDRESS: await baseToken.getAddress(),
   })
 }
