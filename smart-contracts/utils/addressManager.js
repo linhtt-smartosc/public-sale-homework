@@ -32,7 +32,7 @@ const getNetworkName = (chainId) => {
       return "ethereum";
     case 11155111:
       return "sepolia";
-    case 1337:
+    case 31337:
       return "localhost";
   }
   return "";

@@ -2,7 +2,7 @@ const { ethers } = require("hardhat");
 const { writeAddresses } = require("../utils/addressManager");
 require ('dotenv').config();
 
-async function main() {
+async function main() { 
 
   //NOTE: Deployment of Sale Token Factory
   const saleTokenFactory = await ethers.getContractFactory("SaleTokenFactory");
@@ -17,9 +17,13 @@ async function main() {
 
   const chainID = Number((await ethers.provider.getNetwork()).chainId)
 
+  console.log("Sale Token Factory deployed info:", saleTokenFactoryDeployed);
+  console.log("Public Sale Factory deployed info:", publicSaleContractFactoryDeployed);
+  
+
   writeAddresses(chainID, {
     DEPLOYED_SALE_TOKEN_FACTORY_ADDRESS: await saleTokenFactoryDeployed.getAddress(),
-    DEPLOYED_PUBLIC_SALE_FACTORY_ADDRESS: await publicSaleContractFactoryDeployed.getAddress(),
+    DEPLOYED_PUBLIC_SALE_FACTORY_ADDRESS: await publicSaleContractFactoryDeployed.getAddress()
   })
 }
 

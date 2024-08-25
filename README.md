@@ -20,6 +20,9 @@ git clone https://github.com/linhtt-smartosc/public-sale-homework.git
 ### Install dependencies
 Run the command to install all dependencies: 
 ```
+cd src
+npm install
+cd ../smart-contracts
 npm install
 ```
 ### Compile the smart contracts 
@@ -31,4 +34,9 @@ npx hardhat compile
 Run the command to run the tests: 
 ``` 
 npx hardhat test
+```
+Run the command to deploy the contracts:
+```
+npx hardhat node
+npm run deploy-local
 ```

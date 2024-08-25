@@ -4,14 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/app.js",
-    "deploy": "npx hardhat run scripts/01-deploy-publicsale.js --network bsctest",
-    "deploy-sepolia": "npx hardhat run scripts/02-deploy-whole.ts --network sepolia",
-    "deploy-bsctest": "npx hardhat run scripts/02-deploy-whole.ts --network bsctest",
-    "deploy-local": "npx hardhat run scripts/02-deploy-whole.ts --network hardhat",
-    "deploy-factory-sepolia": "npx hardhat run scripts/03-deploy-factory.ts --network sepolia",
-    "deploy-factory-bsctest": "npx hardhat run scripts/03-deploy-factory.ts --network bsctest",
-    "deploy-factory-local": "npx hardhat run scripts/03-deploy-factory.ts --network hardhat"
+    "server": "nodemon -r dotenv/config app.js"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +28,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "ether": "^0.0.9",
+    "ethers": "^6.13.2",
     "express": "^4.19.2",
     "public-sale-homework": "file:"
   }

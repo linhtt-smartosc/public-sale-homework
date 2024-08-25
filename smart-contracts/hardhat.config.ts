@@ -45,8 +45,9 @@ const config: HardhatUserConfig = {
     ],
   },
   networks: {
-    hardhat: {
-      chainId: 1337,
+    local: {
+      url: "http://127.0.0.1:8545/",
+      chainId: 31337,
     },
     bsctest: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545/",

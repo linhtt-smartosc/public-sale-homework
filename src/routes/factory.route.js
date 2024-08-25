@@ -1,9 +1,9 @@
-const express = require('express')
-const factory_router = express.Router();
+const express = require('express');
+const factoryRouter = express.Router();
 
-const factoryController = require('../controllers/factory.controller')
+const factoryController = require('../controllers/factory.controller');
 
-factory_router.post('/publicsale/create', factoryController.createPublicSale);
-factory_router.post('/saletoken/create', factoryController.createSaleToken);
+factoryRouter.post('/publicsale/create', factoryController.createPublicSale);
+factoryRouter.post('/erc20token/create', factoryController.createSaleToken);
 
-module.exports = factory_router;
+module.exports = factoryRouter;
