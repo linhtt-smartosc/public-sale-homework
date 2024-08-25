@@ -1,4 +1,5 @@
 const contractService = require ('../services/contract.services')
+
 async function deposit(req, res) {
     const [ address, amount, privateKey ] = req.body;  
     const result = contractService.deposit(address, amount, privateKey)

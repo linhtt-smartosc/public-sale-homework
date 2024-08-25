@@ -2,9 +2,9 @@ const fs = require("fs");
 const path = require("path");
 
 const writeAddresses = async (
-  chainId: number,
-  addresses: any
-): Promise<void> => {
+  chainId,
+  addresses
+) => {
   const prevAddresses = await getAddresses(chainId);
   const newAddresses = {
     ...prevAddresses,
@@ -22,11 +22,11 @@ const writeAddresses = async (
   });
 };
 
-const getFilePath = (networkName: string): string => {
+const getFilePath = (networkName) => {
   return path.join(__dirname, `../addresses-${networkName}.json`);
 };
 
-const getNetworkName = (chainId: number): string => {
+const getNetworkName = (chainId) => {
   switch (chainId) {
     case 1:
       return "ethereum";
@@ -38,10 +38,10 @@ const getNetworkName = (chainId: number): string => {
   return "";
 };
 
-const getAddresses = async (chainId: number): Promise<any> => {
+const getAddresses = async (chainId) => {
   const networkName = getNetworkName(chainId);
   return new Promise((resolve, reject) => {
-    fs.readFile(getFilePath(networkName), (err: any, data: { toString: () => string; }) => {
+    fs.readFile(getFilePath(networkName), (err, data) => {
       if (err) {
         reject(err);
       } else {

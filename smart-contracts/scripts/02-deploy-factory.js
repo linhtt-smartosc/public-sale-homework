@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { writeAddresses } from "../utils/addressManager";
-import 'dotenv/config'
+const { ethers } = require("hardhat");
+const { writeAddresses } = require("../utils/addressManager");
+require ('dotenv').config();
 
 async function main() {
 
