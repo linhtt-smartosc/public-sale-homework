@@ -1,7 +1,7 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "@openzeppelin/hardhat-upgrades";
-import 'dotenv/config'
+import "dotenv/config";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -45,16 +45,20 @@ const config: HardhatUserConfig = {
     ],
   },
   networks: {
+    local: {
+      url: "http://127.0.0.1:8545/",
+      chainId: 31337,
+    },
     hardhat: {
       chainId: 1337
     },
     bsctest: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
-      accounts: [process.env.BSC_PRIVATE_KEY!],
+      accounts: [process.env.PRIVATE_KEY!],
     },
     sepolia: {
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: [process.env.SEPOLIA_PRIVATE_KEY!],
+      accounts: [process.env.PRIVATE_KEY!],
     },
   },
   sourcify: {

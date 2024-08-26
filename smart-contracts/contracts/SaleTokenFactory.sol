@@ -9,12 +9,12 @@ contract SaleTokenFactory is Events {
     constructor() {
         owner = msg.sender;
     }
-
+    
+    //NOTE: Should be admin (of a specific Sale Token)
     function createSaleToken(
         string memory _name,
         string memory _symbol
     ) external {
-        //NOTE: Should be admin (of a specific Sale Token)
         SaleToken token = new SaleToken(owner, _name, _symbol);
         tokens.push(token);
         emit ERC20TokenCreated(address(token));

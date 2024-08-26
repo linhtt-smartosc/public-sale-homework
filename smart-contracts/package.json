@@ -1,0 +1,36 @@
+{
+  "name": "public-sale-homework",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy-bsctest": "npx hardhat run scripts/01-deploy-whole.js --network bsctest",
+    "deploy-local": "npx hardhat run scripts/01-deploy-whole.js --network hardhat",
+    "deploy-sepolia": "npx hardhat run scripts/01-deploy-whole.js --network sepolia",
+    "deploy-factory-sepolia": "npx hardhat run scripts/02-deploy-factory.js --network sepolia",
+    "deploy-factory-bsctest": "npx hardhat run scripts/02-deploy-factory.js --network bsctest",
+    "deploy-factory-local": "npx hardhat run scripts/02-deploy-factory.js --network hardhat"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomiclabs/hardhat-etherscan": "^3.1.8",
+    "@openzeppelin/hardhat-upgrades": "^3.2.1",
+    "@types/chai": "^4.3.17",
+    "@types/mocha": "^10.0.7",
+    "@types/node": "^22.5.0",
+    "chai": "^4.5.0",
+    "hardhat": "^2.22.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^16.4.5",
+    "ether": "^0.0.9",
+    "public-sale-homework": "file:"
+  }
+}

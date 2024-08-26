@@ -1,7 +1,6 @@
-import { getSigner } from "@openzeppelin/hardhat-upgrades/dist/utils";
-
-import { expect } from "chai";
-import { ethers } from "hardhat";
+const { expect } = require("chai");
+const exp = require("constants");
+const { ethers } = require("hardhat");
 
 const SALE_TOKEN_NAME = "SaleToken";
 const SALE_TOKEN_SYMBOL = "ST";
@@ -11,19 +10,18 @@ describe("Sale Token Factory", function () {
     let saleTokenFactory;
     let saleTokenFactoryDeployed;
     it("Should create sale token", async function () {
-      [owner] = await ethers.getSigners();
+      const [owner] = await ethers.getSigners();
 
       saleTokenFactory = await ethers.getContractFactory("SaleTokenFactory");
 
       saleTokenFactoryDeployed = await saleTokenFactory.connect(owner).deploy();
 
-      await saleTokenFactoryDeployed.connect(owner).createSaleToken(
-        SALE_TOKEN_NAME,
-        SALE_TOKEN_SYMBOL
-      );
+      await expect(await saleTokenFactoryDeployed.connect(owner).createSaleToken(SALE_TOKEN_NAME, SALE_TOKEN_SYMBOL))
+        .to.emit(saleTokenFactoryDeployed, "ERC20TokenCreated")
+        .withArgs(await saleTokenFactoryDeployed.tokens(0));
 
       let saleTokenList = await saleTokenFactoryDeployed.connect(owner).getSaleTokens();
-      expect (saleTokenList.length == 1 ).to.equal(true, "Sale Token Contract wasn't created")
+      expect(saleTokenList.length == 1).to.equal(true, "Sale Token Contract wasn't created")
     });
   });
 });
