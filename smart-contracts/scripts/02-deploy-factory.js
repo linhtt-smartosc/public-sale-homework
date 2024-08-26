@@ -3,14 +3,10 @@ const { writeAddresses } = require("../utils/addressManager");
 require ('dotenv').config();
 
 async function main() { 
-
-  //NOTE: Deployment of Sale Token Factory
   const saleTokenFactory = await ethers.getContractFactory("SaleTokenFactory");
   const saleTokenFactoryDeployed = await saleTokenFactory.deploy();
   await saleTokenFactoryDeployed.waitForDeployment();
 
-
-  //NOTE: Deployment of Public Sale Factory  
   const publicSaleContractFactory = await ethers.getContractFactory("PublicSaleFactory");
   const publicSaleContractFactoryDeployed = await publicSaleContractFactory.deploy();
   publicSaleContractFactoryDeployed.waitForDeployment();

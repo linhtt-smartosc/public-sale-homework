@@ -1,4 +1,5 @@
-const { publicSaleFactory, erc20Factory, provider } = require('../config/contract-intances');
+const { publicSaleFactory, erc20Factory } = require('../config/contract-intances');
+const getEvent = require('../utils/getEvent.util');
 
 async function createSaleToken(name, symbol) {
     const transaction = await erc20Factory.createSaleToken(name, symbol);
@@ -20,21 +21,6 @@ async function createPublicSale(s_token_address, b_token_address, b_token_decima
         saleAddress = event[0].args[0];
     }
     return saleAddress;
-}
-
-async function getEvent(contract, eventName, receipt) {
-    let event = [];
-    receipt.logs.forEach(log => {
-        try {
-            const e = contract.interface.parseLog(log);
-            if (e && e.name === eventName) {
-                event.push(e);
-            }
-        } catch (error) {
-            console.log(error); 
-        }
-    });
-    return event;
 }
 
 module.exports = {

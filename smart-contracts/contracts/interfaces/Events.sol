@@ -27,8 +27,9 @@ abstract contract Events {
      * and the amount of tokens purchased.
      * @param beneficiary Address of the participant who made the purchase.
      * @param contribution Amount of ETH contributed by the participant.
+     * @param tokens Amount of tokens purchased by the participant.
      */
-    event Purchase(address indexed beneficiary, uint256 contribution);
+    event Purchase(address indexed beneficiary, uint256 contribution, uint256 tokens);
 
     /**
      * @dev Emitted when a participant successfully claims a refund. This is typically allowed when the public sale
