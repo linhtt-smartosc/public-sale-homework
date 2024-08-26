@@ -141,9 +141,10 @@ contract PublicSale is IPublicSale, Error, Events {
             publicsale_status.TOTAL_BASE_COLLECTED + _base_token_amount > publicsale_info.HARDCAP
         ) revert HardCapExceed(remaining);
 
+        uint tokenOwed;
         unchecked {
             BUYERS[msg.sender].baseDeposited += _base_token_amount;
-            uint256 tokenOwed = (_base_token_amount * publicsale_info.S_TOKEN_DECIMALS * publicsale_info.TOKEN_RATE) /
+            tokenOwed = (_base_token_amount * publicsale_info.S_TOKEN_DECIMALS * publicsale_info.TOKEN_RATE) /
                 publicsale_info.B_TOKEN_DECIMALS;
             BUYERS[msg.sender].tokensOwed += tokenOwed;
             publicsale_status.TOTAL_BASE_COLLECTED += _base_token_amount;
@@ -159,7 +160,7 @@ contract PublicSale is IPublicSale, Error, Events {
             _base_token_amount
         );
 
-        emit Purchase(msg.sender, _base_token_amount);
+        emit Purchase(msg.sender, _base_token_amount, tokenOwed);
     }
 
     function cancel() external onlyOwner inValidTime {
